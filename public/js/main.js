@@ -6,13 +6,15 @@ const $ = (id) => document.getElementById(id);
 
 let room = null;        // último estado de la sala recibido del servidor
 let screen = 'home';
-let lastScores = '';
-let goal = 15;
+let hudKey = '';        // para no repintar el marcador si no ha cambiado nada
+let bannerText = '';
+let warned = false;     // aviso de «quedan 5 segundos» ya dado en esta bomba
+let toastTimer = null;
 
 applyI18n();
 
 // Recuperar el apodo de la última vez y el código si se entra con un enlace de invitación.
-try { $('name').value = localStorage.getItem('coinrush-name') || ''; } catch (e) { /* sin almacenamiento */ }
+try { $('name').value = localStorage.getItem('bomba-name') || ''; } catch (e) { /* sin almacenamiento */ }
 const invited = new URLSearchParams(location.search).get('sala');
 if (invited) $('code').value = invited.toUpperCase().slice(0, 4);
 $('name').focus();
@@ -29,8 +31,18 @@ function show(name) {
   if (heading) heading.focus();
 }
 
+// Mensaje para lectores de pantalla.
 function announce(text) {
   $('live').textContent = text;
+}
+
+// Mensaje para lectores de pantalla y, además, visible un par de segundos durante la partida.
+function notify(text) {
+  announce(text);
+  $('toast').textContent = text;
+  $('toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').hidden = true; }, 2500);
 }
 
 function showError(code, target = 'error') {
@@ -59,7 +71,8 @@ function playerItem(p, extra) {
   return li;
 }
 
-const hostName = () => (room.players.find((p) => p.id === room.hostId) || {}).name || '';
+const playerById = (id) => (room ? room.players.find((p) => p.id === id) : null) || { name: '', index: 0 };
+const hostName = () => playerById(room.hostId).name;
 const isHost = () => room && room.hostId === socket.id;
 
 function renderLobby() {
@@ -78,9 +91,37 @@ function renderLobby() {
     : t(enough ? 'wait_ready' : 'wait_players');
 }
 
-function renderHud(players) {
-  const sorted = [...players].sort((a, b) => b.score - a.score);
-  $('hud').replaceChildren(...sorted.map((p) => playerItem(p, `${p.score} / ${goal}`)));
+// Marcador de la partida: quién tiene la bomba y quién está eliminado.
+function renderHud(state) {
+  const key = `${state.bomb.holder}|${state.players.map((p) => `${p.id}${p.alive ? 1 : 0}`).join()}`;
+  if (key === hudKey) return;
+  hudKey = key;
+  $('hud').replaceChildren(...state.players.map((s) => {
+    const hasBomb = s.id === state.bomb.holder;
+    const li = playerItem({ ...playerById(s.id), id: s.id }, hasBomb ? t('tag_bomb') : (s.alive ? '' : t('tag_out')));
+    li.classList.toggle('bomb', hasBomb);
+    li.classList.toggle('out', !s.alive);
+    return li;
+  }));
+  $('hint').textContent = t(Game.isSpectator() ? 'spectator_hint' : 'controls_hint');
+}
+
+// Cartel superior con la cuenta atrás de la bomba.
+function renderBanner(bomb) {
+  const mine = bomb.holder === socket.id;
+  let text;
+  if (!bomb.holder) text = t('bomb_wait', { n: Math.ceil(bomb.pause) });
+  else if (mine) text = t('bomb_you', { n: Math.ceil(bomb.left) });
+  else text = t('bomb_other', { name: playerById(bomb.holder).name, n: Math.ceil(bomb.left) });
+  if (text === bannerText) return;
+  bannerText = text;
+  $('banner').textContent = text;
+  $('banner').classList.toggle('danger', mine);
+
+  if (mine && !warned && bomb.left <= 5) {
+    warned = true;
+    announce(t('announce_5s'));
+  }
 }
 
 function renderResultsControls() {
@@ -94,7 +135,7 @@ function enterRoom(event, payload) {
   showError(null);
   const name = $('name').value.trim();
   if (!name) return showError('invalid_name');
-  try { localStorage.setItem('coinrush-name', name); } catch (e) { /* sin almacenamiento */ }
+  try { localStorage.setItem('bomba-name', name); } catch (e) { /* sin almacenamiento */ }
   socket.emit(event, { name, ...payload }, (res) => { if (!res.ok) showError(res.error); });
 }
 
@@ -158,29 +199,36 @@ socket.on('room_update', (data) => {
 });
 
 socket.on('game_start', (data) => {
-  lastScores = '';
-  goal = data.goal;
+  hudKey = '';
+  bannerText = '';
+  $('toast').hidden = true;
   show('game');
   Game.start(data, socket.id, (input) => socket.emit('input', input));
-  renderHud(data.players);
+  renderHud({ players: data.players, bomb: { holder: null } });
   announce(t('announce_start'));
 });
 
-socket.on('state', (players) => {
-  Game.onState(players);
-  // El marcador solo se vuelve a pintar cuando cambia alguna puntuación.
-  const scores = players.map((p) => `${p.id}:${p.score}`).join();
-  if (scores !== lastScores) {
-    const me = players.find((p) => p.id === socket.id);
-    if (lastScores && me && me.score > 0 && !lastScores.includes(`${me.id}:${me.score}`)) {
-      announce(t('announce_score', { n: me.score }));
-    }
-    lastScores = scores;
-    renderHud(players);
-  }
+socket.on('state', (state) => {
+  Game.onState(state);
+  renderHud(state);
+  renderBanner(state.bomb);
 });
 
-socket.on('coin_collected', (coin) => Game.onCoin(coin.id));
+socket.on('game_event', (event) => {
+  Game.onEvent(event);
+  const me = socket.id;
+  if (event.type === 'bomb' || event.type === 'pass') {
+    const to = event.type === 'bomb' ? event.holder : event.to;
+    if (event.type === 'bomb') warned = false;
+    if (to === me) notify(t('announce_bomb_you'));
+    else if (event.from === me) notify(t('announce_passed', { name: playerById(to).name }));
+    else announce(t('announce_bomb_other', { name: playerById(to).name }));
+  } else if (event.type === 'explosion') {
+    notify(event.id === me ? t('announce_out_you') : t('announce_out_other', { name: playerById(event.id).name }));
+  } else if (event.type === 'gadget' && event.by === me) {
+    notify(t(`announce_${event.kind}`));
+  }
+});
 
 socket.on('game_over', (result) => {
   Game.stop();
@@ -188,8 +236,8 @@ socket.on('game_over', (result) => {
   $('results-title').textContent = title;
   const byName = new Map((room ? room.players : []).map((p) => [p.name, p]));
   $('ranking').replaceChildren(...result.players.map((p) => {
-    const info = byName.get(p.name) || { index: 0, name: p.name };
-    return playerItem({ ...info, name: p.name }, t('coins', { n: p.score }));
+    const info = byName.get(p.name) || { index: 0 };
+    return playerItem({ ...info, name: p.name }, t(p.eliminated ? 'tag_out' : 'tag_winner'));
   }));
   $('api-link').href = `api/games/${result.id}`;
   if (room) renderResultsControls();

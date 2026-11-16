@@ -9,6 +9,7 @@
   --dark: #14161f;
   --error: #ffa8a8;
   --focus: #74c0fc;
+  --danger: #ff6b6b;
 }
 
 * { box-sizing: border-box; }
@@ -120,6 +121,42 @@ body.playing main { padding: 0; display: block; height: 100%; }
 .hud { position: absolute; top: 12px; left: 12px; width: 210px; }
 .hud li { padding: 4px 10px; margin-bottom: 4px; background: rgba(13, 16, 26, 0.88); font-size: 0.95rem; }
 .hud .tag { color: var(--text); font-weight: 700; }
+.hud li.bomb { border-color: var(--danger); }
+.hud li.bomb .tag { color: var(--danger); }
+.hud li.out .name { text-decoration: line-through; color: var(--muted); }
+.hint p { margin: 0; }
+
+/* Cartel con la cuenta atrás de la bomba */
+.banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 18px;
+  background: rgba(13, 16, 26, 0.92);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.banner.danger { color: var(--dark); background: var(--danger); border-color: var(--danger); }
+
+/* Aviso breve en el centro (bomba recibida, gadget pisado, eliminación) */
+.toast {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 16px;
+  background: rgba(13, 16, 26, 0.92);
+  border-radius: 10px;
+  font-weight: 600;
+  text-align: center;
+}
 .hint {
   position: absolute;
   left: 12px;

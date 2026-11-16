@@ -6,18 +6,28 @@ const Game = (() => {
   // Cada jugador tiene un color y además una forma distinta (no depender solo del color).
   const COLORS = ['#ff6b6b', '#4dabf7', '#69db7c', '#f783ac', '#da77f2', '#ff922b', '#38d9a9', '#f1f3f5'];
   const SYMBOLS = ['●', '■', '▲', '◆', '★', '⬢', '✚', '⬟'];
+  // Cada gadget tiene un color y un símbolo propios. Las letras t, g, b son las que envía el servidor.
+  const GADGETS = {
+    trap: { color: '#ff8787', glyph: '×', fx: 't' },
+    gum: { color: '#faa2c1', glyph: '≈', fx: 'g' },
+    boost: { color: '#8ce99a', glyph: '»', fx: 'b' },
+  };
   const FLOOR = '#1b2033';
   const WALL = '#6b7fc4';
   const WALL_EDGE = '#8fa0dd';
-  const GOLD = '#ffd43b';
+  const DARK = '#0d101a';
+  const DANGER = '#ff6b6b';
   const KEYS = {
     ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
     ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
   };
 
-  let canvas, ctx, map, coins, players, myId, sendInput, minimapWalls;
+  let canvas, ctx, map, gadgets, players, myId, sendInput, minimapWalls;
+  let holderId = null;
   let running = false;
   let lastTime = 0;
+  let blasts = [];                  // explosiones que se están dibujando
+  const spectator = { x: 0, y: 0 }; // cámara libre cuando estás eliminado
   const input = { up: false, down: false, left: false, right: false };
 
   function start(data, id, onInput) {
@@ -26,7 +36,9 @@ const Game = (() => {
     map = data;
     myId = id;
     sendInput = onInput;
-    coins = new Map(data.coins.map((c) => [c.id, c]));
+    holderId = null;
+    blasts = [];
+    gadgets = new Map(data.gadgets.map((g) => [g.id, g]));
     players = new Map(data.players.map((p) => [p.id, { ...p, drawX: p.x, drawY: p.y }]));
     minimapWalls = buildMinimap();
     Object.keys(input).forEach((k) => { input[k] = false; });
@@ -47,20 +59,33 @@ const Game = (() => {
     window.removeEventListener('blur', releaseKeys);
   }
 
-  // Nuevas posiciones y puntuaciones enviadas por el servidor.
-  function onState(list) {
-    const alive = new Set();
-    for (const s of list) {
-      alive.add(s.id);
+  // Nuevas posiciones y estado de la bomba enviados por el servidor.
+  function onState(state) {
+    holderId = state.bomb.holder;
+    const present = new Set();
+    for (const s of state.players) {
+      present.add(s.id);
       const p = players.get(s.id);
-      if (p) Object.assign(p, { x: s.x, y: s.y, score: s.score });
+      if (p) Object.assign(p, s);
     }
-    for (const id of players.keys()) if (!alive.has(id)) players.delete(id);
+    for (const id of players.keys()) if (!present.has(id)) players.delete(id);
   }
 
-  function onCoin(id) {
-    coins.delete(id);
+  // Cosas que pasan en la partida: gadgets usados y explosiones.
+  function onEvent(event) {
+    if (event.type === 'gadget') {
+      gadgets.delete(event.removed);
+      gadgets.set(event.added.id, event.added);
+    } else if (event.type === 'explosion') {
+      blasts.push({ x: event.x, y: event.y, start: performance.now() });
+      if (event.id === myId) Object.assign(spectator, { x: event.x, y: event.y });
+    }
   }
+
+  const isSpectator = () => {
+    const me = players.get(myId);
+    return !me || !me.alive;
+  };
 
   // ---------- Teclado ----------
 
@@ -91,11 +116,17 @@ const Game = (() => {
       p.drawX += (p.x - p.drawX) * k;
       p.drawY += (p.y - p.drawY) * k;
     }
-    draw();
+    if (isSpectator()) {
+      spectator.x += ((input.right ? 1 : 0) - (input.left ? 1 : 0)) * 500 * dt;
+      spectator.y += ((input.down ? 1 : 0) - (input.up ? 1 : 0)) * 500 * dt;
+      spectator.x = clamp(spectator.x, 0, map.cols * map.tile);
+      spectator.y = clamp(spectator.y, 0, map.rows * map.tile);
+    }
+    draw(now);
     requestAnimationFrame(frame);
   }
 
-  function draw() {
+  function draw(now) {
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
@@ -107,12 +138,13 @@ const Game = (() => {
 
     const mapW = map.cols * map.tile;
     const mapH = map.rows * map.tile;
-    const me = players.get(myId) || players.values().next().value;
-    // La cámara sigue al jugador sin salirse del mapa.
-    const camX = mapW <= w ? (mapW - w) / 2 : clamp((me ? me.drawX : mapW / 2) - w / 2, 0, mapW - w);
-    const camY = mapH <= h ? (mapH - h) / 2 : clamp((me ? me.drawY : mapH / 2) - h / 2, 0, mapH - h);
+    const me = players.get(myId);
+    const focus = isSpectator() ? spectator : { x: me.drawX, y: me.drawY };
+    // La cámara sigue al jugador (o al espectador) sin salirse del mapa.
+    const camX = mapW <= w ? (mapW - w) / 2 : clamp(focus.x - w / 2, 0, mapW - w);
+    const camY = mapH <= h ? (mapH - h) / 2 : clamp(focus.y - h / 2, 0, mapH - h);
 
-    ctx.fillStyle = '#0d101a';
+    ctx.fillStyle = DARK;
     ctx.fillRect(0, 0, w, h);
     ctx.save();
     ctx.translate(-Math.round(camX), -Math.round(camY));
@@ -136,36 +168,89 @@ const Game = (() => {
       }
     }
 
-    for (const c of coins.values()) {
-      ctx.fillStyle = GOLD;
+    // Gadgets: baldosa oscura con borde de color y un símbolo.
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 22px system-ui, sans-serif';
+    for (const g of gadgets.values()) {
+      const style = GADGETS[g.type];
+      const r = map.gadgetRadius;
+      ctx.fillStyle = DARK;
+      ctx.strokeStyle = style.color;
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(c.x, c.y, map.coinRadius, 0, Math.PI * 2);
+      ctx.rect(g.x - r, g.y - r, r * 2, r * 2);
       ctx.fill();
-      ctx.strokeStyle = '#8a6d00';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, map.coinRadius - 4, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.fillStyle = style.color;
+      ctx.fillText(style.glyph, g.x, g.y + 1);
     }
 
-    ctx.font = 'bold 14px system-ui, sans-serif';
-    ctx.textAlign = 'center';
     for (const p of players.values()) {
+      if (!p.alive) continue;
+      const hasBomb = p.id === holderId;
+      if (hasBomb) {
+        ctx.strokeStyle = DANGER;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(p.drawX, p.drawY, map.radius + 9, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       shapePath(ctx, p.index, p.drawX, p.drawY, map.radius);
       ctx.fillStyle = COLORS[p.index % 8];
       ctx.fill();
       ctx.lineWidth = p.id === myId ? 3 : 1.5;
-      ctx.strokeStyle = p.id === myId ? '#ffffff' : '#0d101a';
+      ctx.strokeStyle = p.id === myId ? '#ffffff' : DARK;
       ctx.stroke();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = '#0d101a';
-      ctx.strokeText(p.name, p.drawX, p.drawY - map.radius - 10);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(p.name, p.drawX, p.drawY - map.radius - 10);
+      if (hasBomb) drawBomb(p.drawX + map.radius + 20, p.drawY + 4);
+
+      // Apodo encima y efectos activos debajo.
+      ctx.font = 'bold 14px system-ui, sans-serif';
+      label(p.name, p.drawX, p.drawY - map.radius - 14, '#ffffff');
+      const fx = Object.values(GADGETS).filter((g) => p.fx.includes(g.fx));
+      ctx.font = 'bold 18px system-ui, sans-serif';
+      fx.forEach((g, i) => label(g.glyph, p.drawX + (i - (fx.length - 1) / 2) * 16, p.drawY + map.radius + 14, g.color));
+    }
+
+    // Explosiones: un anillo que crece durante medio segundo.
+    blasts = blasts.filter((b) => now - b.start < 600);
+    for (const b of blasts) {
+      const progress = (now - b.start) / 600;
+      ctx.strokeStyle = '#ffd43b';
+      ctx.lineWidth = 8 * (1 - progress) + 1;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 20 + progress * 90, 0, Math.PI * 2);
+      ctx.stroke();
     }
     ctx.restore();
 
     drawMinimap(w, h);
+  }
+
+  function label(text, x, y, color) {
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = DARK;
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+  }
+
+  function drawBomb(x, y) {
+    ctx.strokeStyle = '#f1f3f5';
+    ctx.lineWidth = 2;
+    ctx.beginPath();        // mecha
+    ctx.moveTo(x + 4, y - 6);
+    ctx.lineTo(x + 9, y - 12);
+    ctx.stroke();
+    ctx.fillStyle = '#14161f';
+    ctx.beginPath();        // cuerpo
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffd43b';
+    ctx.beginPath();        // chispa
+    ctx.arc(x + 10, y - 13, 3.5, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   // Forma de cada jugador según su índice.
@@ -233,20 +318,29 @@ const Game = (() => {
     ctx.strokeStyle = '#f1f3f5';
     ctx.lineWidth = 1;
     ctx.strokeRect(ox - 0.5, oy - 0.5, mw + 1, mh + 1);
-    ctx.fillStyle = GOLD;
-    for (const c of coins.values()) ctx.fillRect(ox + c.x * s - 1, oy + c.y * s - 1, 2.5, 2.5);
     for (const p of players.values()) {
+      if (!p.alive) continue;
       const size = p.id === myId ? 7 : 5;
+      const px = ox + p.drawX * s;
+      const py = oy + p.drawY * s;
       ctx.fillStyle = COLORS[p.index % 8];
-      ctx.fillRect(ox + p.drawX * s - size / 2, oy + p.drawY * s - size / 2, size, size);
+      ctx.fillRect(px - size / 2, py - size / 2, size, size);
       if (p.id === myId) {
         ctx.strokeStyle = '#ffffff';
-        ctx.strokeRect(ox + p.drawX * s - size / 2, oy + p.drawY * s - size / 2, size, size);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px - size / 2, py - size / 2, size, size);
+      }
+      if (p.id === holderId) {  // la bomba se marca con un anillo
+        ctx.strokeStyle = DANGER;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(px, py, 7, 0, Math.PI * 2);
+        ctx.stroke();
       }
     }
   }
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-  return { start, stop, onState, onCoin, COLORS, SYMBOLS };
+  return { start, stop, onState, onEvent, isSpectator, COLORS, SYMBOLS };
 })();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Coin Rush</title>
+  <title>Pasa la bomba</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -35,6 +35,7 @@
         <li data-i18n="how_1"></li>
         <li data-i18n="how_2"></li>
         <li data-i18n="how_3"></li>
+        <li data-i18n="how_4"></li>
       </ul>
     </section>
 
@@ -64,8 +65,13 @@
     <section id="screen-game" aria-labelledby="game-title" hidden>
       <h1 id="game-title" class="sr-only" tabindex="-1" data-i18n="game_title"></h1>
       <canvas id="canvas" role="img" data-i18n-label="canvas_label"></canvas>
-      <ol id="hud" class="players hud" data-i18n-label="scoreboard"></ol>
-      <p class="hint" data-i18n="controls_hint"></p>
+      <p id="banner" class="banner"></p>
+      <ul id="hud" class="players hud" data-i18n-label="scoreboard"></ul>
+      <p id="toast" class="toast" hidden></p>
+      <div class="hint">
+        <p id="hint" data-i18n="controls_hint"></p>
+        <p data-i18n="legend"></p>
+      </div>
     </section>
 
     <!-- Resultados -->

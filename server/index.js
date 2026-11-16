@@ -6,6 +6,7 @@ const http = require('http');
 const os = require('os');
 const path = require('path');
 const { Server } = require('socket.io');
+const CONFIG = require('./config');
 const game = require('./game');
 
 const PORT = process.env.PORT || 3000;
@@ -47,32 +48,30 @@ function cleanName(value) {
   return name || null;
 }
 
-function scoreOf(room, id) {
-  const p = room.game && room.game.players.get(id);
-  return p ? p.score : 0;
-}
-
 // Lo que ven los clientes de una sala.
 function publicRoom(room) {
   return {
     code: room.code,
     hostId: room.hostId,
     status: room.status,
-    players: [...room.players.values()].map((p) => ({ ...p, score: scoreOf(room, p.id) })),
+    players: [...room.players.values()],
   };
 }
 
-// Lo que devuelve la API REST.
+// Lo que devuelve la API REST. Los jugadores van ordenados por puesto: primero los vivos,
+// después los eliminados empezando por el que más aguantó.
 function summary(room) {
+  const list = [...room.players.values()].map((p) => {
+    const inGame = room.game && room.game.players.get(p.id);
+    return { name: p.name, alive: inGame ? inGame.alive : true, out: inGame ? inGame.outOrder : 0 };
+  });
+  list.sort((a, b) => (b.alive - a.alive) || (b.out - a.out));
   return {
     id: room.code,
     status: room.status,  // lobby | playing | finished
-    goal: game.GOAL,
-    totalCoins: game.COIN_COUNT,
-    coinsLeft: room.game ? room.game.coins.size : game.COIN_COUNT,
-    players: [...room.players.values()]
-      .map((p) => ({ name: p.name, score: scoreOf(room, p.id) }))
-      .sort((a, b) => b.score - a.score),
+    bombSeconds: CONFIG.BOMB_SECONDS,
+    players: list.map((p, i) => ({ name: p.name, place: room.game ? i + 1 : null, eliminated: !p.alive })),
+    eliminationOrder: list.filter((p) => !p.alive).sort((a, b) => a.out - b.out).map((p) => p.name),
     winner: room.winner,
   };
 }
@@ -116,33 +115,39 @@ function startGame(room) {
     tile: game.TILE,
     cols: game.COLS,
     rows: game.ROWS,
-    goal: game.GOAL,
     radius: game.RADIUS,
-    coinRadius: game.COIN_RADIUS,
+    gadgetRadius: game.GADGET_RADIUS,
+    bombSeconds: CONFIG.BOMB_SECONDS,
     walls: room.game.walls.map((row) => row.map((w) => (w ? '1' : '0')).join('')),
-    coins: [...room.game.coins.values()],
-    players: playerStates(room),
+    gadgets: [...room.game.gadgets.values()],
+    players: [...room.game.players.values()].map((p) => ({
+      id: p.id, name: p.name, index: p.index, x: p.x, y: p.y, alive: true, fx: '',
+    })),
   });
 
   room.timer = setInterval(() => tick(room), game.TICK_MS);
 }
 
-function playerStates(room) {
-  return [...room.game.players.values()].map((p) => ({
-    id: p.id, name: p.name, index: p.index,
-    x: Math.round(p.x), y: Math.round(p.y), score: p.score,
-  }));
-}
-
 function tick(room) {
-  const { collected, winnerId } = game.step(room.game, game.TICK_MS / 1000);
-  for (const coin of collected) io.to(room.code).emit('coin_collected', coin);
-  io.to(room.code).emit('state', playerStates(room));
+  const g = room.game;
+  const { events, winnerId } = game.step(g, game.TICK_MS / 1000);
+  for (const event of events) io.to(room.code).emit('game_event', event);
+
+  io.to(room.code).emit('state', {
+    players: [...g.players.values()].map((p) => ({
+      id: p.id, x: Math.round(p.x), y: Math.round(p.y), alive: p.alive, fx: game.effectsOf(g, p),
+    })),
+    bomb: {
+      holder: g.bomb.holderId,
+      left: Math.max(0, Math.round(g.bomb.left * 10) / 10),
+      pause: Math.max(0, Math.round(g.bomb.pause * 10) / 10),
+    },
+  });
 
   if (winnerId !== null) {
     clearInterval(room.timer);
     room.status = 'finished';
-    room.winner = room.game.players.get(winnerId).name;
+    room.winner = g.players.get(winnerId).name;
     results.set(room.code, summary(room));
     if (results.size > 100) results.delete(results.keys().next().value);
     io.to(room.code).emit('game_over', { ...summary(room), winnerId });
@@ -222,7 +227,7 @@ function start(port = PORT) {
 
 if (require.main === module) {
   start().then(() => {
-    console.log(`\nCoin Rush en marcha:`);
+    console.log(`\nPasa la bomba en marcha:`);
     console.log(`  En este portátil:  http://localhost:${PORT}`);
     for (const list of Object.values(os.networkInterfaces())) {
       for (const net of list) {

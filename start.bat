@@ -1,7 +1,7 @@
 @echo off
-rem Arranca el servidor de Coin Rush y el tunel de Cloudflare.
+rem Arranca el servidor de Pasa la bomba y el tunel de Cloudflare.
 rem Sin acentos a proposito, para evitar problemas de codificacion en la consola de Windows.
-title Coin Rush
+title Pasa la bomba
 cd /d "%~dp0"
 
 where node >nul 2>nul
@@ -25,7 +25,7 @@ if not exist node_modules (
 )
 
 echo Arrancando el servidor en otra ventana...
-start "Servidor Coin Rush" cmd /k "node server/index.js"
+start "Servidor Pasa la bomba" cmd /k "node server/index.js"
 
 where cloudflared >nul 2>nul
 if errorlevel 1 (

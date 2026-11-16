@@ -68,3 +68,61 @@ Registro de cómo se ha construido el juego con agentes de IA. Cada sesión aña
 - **Prompt:** «invita a mi compañera […] sube el repositorio a github y ponlo como público». La IA no pudo crear el repositorio ni invitar: su acceso a GitHub solo funciona con repositorios ya existentes y autorizados para la sesión. Dejó configurado el remoto y un `subir.bat`; crear el repositorio vacío e invitar a la compañera lo hace el alumno en la web.
 - **Corrección de privacidad.** El primer commit llevaba el correo personal del alumno como autor. Como el repositorio va a ser público, la IA rehízo ese commit (todavía sin subir) con la dirección anónima de GitHub. Es la única vez que se ha reescrito historial.
 - **Para investigar:** qué es un remoto de git (`origin`) y la diferencia entre `commit` y `push`.
+
+---
+
+## Sesión 2 — 2026-11-16 — Cambio de objetivo: de las monedas a «Pasa la bomba»
+
+**Herramienta:** Claude en modo Cowork (aplicación de escritorio), modelo configurado `claude-fable-5-2`. Un único agente.
+
+**Qué se pidió:**
+
+1. «El nombre coin rush ya existe, dime otro nombre».
+2. «Vamos a intentar cambiar el objetivo del juego, dime otro objetivo similar».
+3. La idea del alumno: un juego de bombas en el que quien tiene la bomba se la pasa a otro al tocarlo; explota a los 30 segundos, elimina al portador y pasa a un jugador al azar; con gadgets en el mapa (trampa de oso que bloquea 1,5 s, chicle que frena y acelerador ×1,5). «Mejórame las ideas si quieres y te diré que sí».
+4. «Pasa-la-bomba, modifícame el subir.bat» y, después, «sigue con el proyecto».
+
+**Qué se hizo:**
+
+- El repositorio se subió a GitHub como `aleixSS-lab/pasa-la-bomba` (lo creó y subió el alumno con `subir.bat`).
+- Se rehízo la lógica de la partida: bomba con cuenta atrás, paso al tocar, eliminación, bomba nueva al azar, tres gadgets y victoria del último vivo.
+- Cliente: cartel con la cuenta atrás, anillo e icono de bomba sobre el portador, gadgets con color y símbolo, avisos en pantalla, modo espectador con cámara libre para los eliminados, clasificación final.
+- Nuevo `server/config.js` con todos los valores ajustables.
+- El endpoint devuelve ahora los jugadores por puesto, el orden de eliminación y el ganador.
+- Prueba automática nueva en dos partes: reglas (velocidades, gadgets, paso de bomba, explosión) y partida completa por red.
+- `CLAUDE.md` actualizado con las reglas nuevas y el nombre.
+
+**Decisiones y por qué:**
+
+- **La idea del juego es del alumno; la IA propuso cuatro ajustes** para que funcionara:
+  - *Quien lleva la bomba corre ×1,15.* A la misma velocidad nunca alcanzaría a nadie.
+  - *Un segundo de inmunidad para quien la acaba de pasar.* Si no, dos jugadores pegados se la devuelven sin parar.
+  - *Chicle a mitad de velocidad durante 3 s.* El «0.05» del alumno era ambiguo (¿5 % más lento o al 5 %?); la mitad se nota y se distingue de la trampa.
+  - *Los eliminados pasan a espectadores* en vez de quedarse con la pantalla vacía.
+- **Ajuste añadido al programar, sin consultarlo antes:** quien recibe la bomba se queda parado medio segundo. Al hacer cuentas, la inmunidad sola no bastaba: el nuevo portador corre más y seguía pegado al otro, así que al acabar el segundo se la devolvía. Está en `config.js` (`RECEIVE_STUN`) y se puede poner a 0.
+- **El tiempo de la bomba no se reinicia al pasarla.** Así cada ronda dura como mucho 30 s y la tensión sube.
+- **Valores en un solo archivo.** El alumno avisó de que los irá cambiando «mediante comprobaciones»; por eso la prueba lee los valores de `config.js` en vez de tenerlos fijos.
+- **Se conservó todo lo que no era el objetivo:** salas, sala de espera, mapa aleatorio, movimiento, túnel. El cambio afectó sobre todo a `server/game.js` y a la parte visual.
+- **Nombre:** la IA propuso «Mecha Corta»; el alumno eligió «Pasa la bomba».
+- **Otras opciones de objetivo descartadas:** contrarreloj de monedas, robo de monedas, llevar monedas a un cofre, moneda maldita y pilla-pilla.
+
+**Qué falló y cómo se arregló:**
+
+- **El primer objetivo (monedas) se abandonó** por decisión del alumno a mitad de proyecto. El trabajo de las fases 2 y 3 hubo que rehacerlo en parte.
+- **La IA no puede crear repositorios en GitHub ni invitar colaboradores** desde su entorno; lo hizo el alumno.
+- **El código nuevo pasó las pruebas a la primera**, primero con los sustitutos de las librerías y después con Express y Socket.IO reales (los que el alumno instaló con `probar.bat`). Limitación: esa prueba real se ejecutó en el entorno Linux aislado del portátil, no en Windows directamente.
+- **No se ha jugado todavía con personas.** Las pruebas las hacen jugadores automáticos que se mueven al azar; no dicen si el juego es divertido ni si los valores están equilibrados.
+- Retoque tras ver las capturas: el icono de la bomba tapaba el apodo del jugador y se movió a un lado.
+- Un texto de ayuda llevaba los «30 segundos» escritos a mano; se quitó el número para que no contradiga a `config.js` si se cambia.
+
+**Pendiente de investigar por el alumno:**
+
+- Cómo detecta el servidor que dos jugadores se tocan (distancia entre centros menor que la suma de radios).
+- Por qué hacen falta la inmunidad y la parada al recibir la bomba: probar a poner `PASS_IMMUNITY` y `RECEIVE_STUN` a 0 y ver qué pasa.
+- Qué diferencia hay entre el mensaje `state` (20 veces por segundo) y `game_event` (solo cuando pasa algo).
+
+**Siguiente paso:**
+
+1. Doble clic en `probar.bat` para confirmar la prueba en Windows, y `git push` (o `subir.bat`) para subir estos cambios.
+2. Jugar una partida real con Adriana y ajustar `server/config.js`.
+3. Fase 4: instalar `cloudflared`, probar `start.bat` y jugar desde otro PC.

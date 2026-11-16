@@ -1,7 +1,7 @@
 @echo off
 rem Instala las dependencias y ejecuta la prueba automatica.
 rem Guarda todo lo que sale en prueba.log para poder revisarlo despues.
-title Prueba de Coin Rush
+title Prueba de Pasa la bomba
 cd /d "%~dp0"
 
 where node >nul 2>nul

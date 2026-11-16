@@ -4,7 +4,18 @@ Este archivo lo debe leer cualquier agente de IA antes de tocar el proyecto. Las
 
 ## 1. Qué es el proyecto
 
-**Coin Rush**: juego web multijugador hyper-casual para una actividad de instituto (DevChallenge3). De 2 a 8 jugadores comparten un mapa 2D generado aleatoriamente con 50 monedas repartidas. Gana el primero que recoja 15. Si las monedas se acaban antes, gana quien más tenga (en caso de empate, quien llegó antes a esa puntuación).
+**Pasa la bomba**: juego web multijugador hyper-casual para una actividad de instituto (DevChallenge3). De 2 a 8 jugadores comparten un mapa 2D generado aleatoriamente. Repositorio: `https://github.com/aleixSS-lab/pasa-la-bomba` (público).
+
+Reglas del juego:
+
+- Tras una cuenta atrás, un jugador al azar recibe una bomba que explota a los 30 segundos.
+- Quien la lleva corre un poco más y se la pasa a otro jugador al tocarlo. El tiempo de la bomba no se reinicia al pasarla.
+- Quien la acaba de pasar es inmune 1 segundo, y quien la recibe se queda parado medio segundo, para que no se la devuelvan sin parar.
+- Cuando explota, el portador queda eliminado y pasa a ser espectador. Tras una pausa, la bomba siguiente va a otro jugador vivo al azar.
+- Gana el último jugador vivo.
+- Por el suelo hay gadgets que afectan a quien los pisa: **trampa de oso** (inmóvil 1,5 s), **chicle** (mitad de velocidad 3 s) y **acelerador** (velocidad ×1,5 durante 3 s). Al usarse reaparecen en otro sitio.
+
+La primera versión del juego era de recoger monedas (Coin Rush); se cambió por decisión del alumno. No queda nada de las monedas en el código.
 
 Alcance, que manda sobre todo lo demás:
 
@@ -60,9 +71,11 @@ DevChallenge3/
 ├── DIARIO.md
 ├── package.json
 ├── start.bat              arranca servidor + túnel y muestra la URL
+├── probar.bat             instala dependencias, ejecuta la prueba y guarda prueba.log
 ├── server/
 │   ├── index.js           Express, Socket.IO, salas, sala de espera y API REST
-│   └── game.js            mapa aleatorio, movimiento, monedas y victoria (sin red)
+│   ├── config.js          valores ajustables del juego (tiempos, velocidades, gadgets)
+│   └── game.js            mapa aleatorio, movimiento, bomba, gadgets y victoria (sin red)
 ├── public/
 │   ├── index.html
 │   ├── css/style.css
@@ -71,18 +84,19 @@ DevChallenge3/
 │       ├── game.js        dibujo en canvas y teclado
 │       └── main.js        conexión con el servidor y pantallas
 └── test/
-    └── smoke.js           simula 3 jugadores y una partida completa
+    └── smoke.js           comprueba las reglas y simula una partida completa con 3 jugadores
 ```
 
 No cambies esta estructura sin preguntar.
 
 Reglas de diseño:
 
-- **Servidor autoritativo.** El cliente solo envía sus teclas pulsadas. El servidor mueve a los jugadores, detecta colisiones, decide quién recoge cada moneda y quién gana.
+- **Servidor autoritativo.** El cliente solo envía sus teclas pulsadas. El servidor mueve a los jugadores, detecta colisiones, decide quién tiene la bomba, quién pisa cada gadget y quién gana.
+- **Valores en `server/config.js`.** Todos los números de juego (tiempos, multiplicadores, cantidad de gadgets) están ahí y solo ahí, para ajustarlos probando. No los escribas a mano en otro archivo ni en los textos. Si cambias uno, ejecuta `npm test`.
 - **20 actualizaciones por segundo.** El servidor emite las posiciones cada 50 ms y el cliente las suaviza al dibujar. No hace falta nada más sofisticado.
 - **Sin login.** El jugador escribe un apodo (único dentro de la sala) y crea una sala o se une con un código de 4 letras. Quien crea la sala es el máster y es el único que puede iniciar la partida. Si el máster se va, lo es el siguiente jugador.
-- **Mapa.** Cuadrícula de 40×30 casillas con muros aleatorios. Monedas y apariciones solo se colocan en casillas alcanzables.
-- **Endpoint de resultado.** `GET /api/games/:id` (el id es el código de sala) devuelve en JSON el estado, las puntuaciones y el ganador. El final de partida también se notifica por WebSocket.
+- **Mapa.** Cuadrícula de 40×30 casillas con muros aleatorios. Gadgets y apariciones solo se colocan en casillas alcanzables.
+- **Endpoint de resultado.** `GET /api/games/:id` (el id es el código de sala) devuelve en JSON el estado, los jugadores por puesto, el orden de eliminación y el ganador. El final de partida también se notifica por WebSocket.
 - **Valida lo que llega del cliente**: tipo y longitud de apodos y códigos, y que el jugador pertenezca a la sala.
 
 Eventos de Socket.IO (no cambies nombres ni datos sin preguntar):
@@ -93,7 +107,8 @@ Eventos de Socket.IO (no cambies nombres ni datos sin preguntar):
 | cliente → servidor | `start_game`, `back_to_lobby` | solo el máster |
 | cliente → servidor | `input` | teclas pulsadas |
 | servidor → cliente | `room_update` | estado de la sala de espera |
-| servidor → cliente | `game_start`, `state`, `coin_collected`, `game_over` | partida |
+| servidor → cliente | `game_start`, `state`, `game_over` | partida: mapa inicial, posiciones y bomba 20 veces por segundo, resultado |
+| servidor → cliente | `game_event` | sucesos sueltos; su campo `type` es `bomb` (bomba nueva), `pass`, `explosion` o `gadget` |
 
 ## 6. Normas de trabajo
 
@@ -112,7 +127,7 @@ Los cambios pequeños y acotados a lo que se ha pedido no necesitan permiso. No 
 
 Ningún cambio se da por terminado sin haberlo probado:
 
-1. Ejecuta `npm test` (arranca un servidor de prueba y simula una partida completa).
+1. Ejecuta `npm test` (comprueba las reglas del juego y simula una partida completa por red).
 2. Si el cambio afecta a la interfaz, arranca `npm start`, ábrela en dos pestañas y comprueba el flujo completo: crear sala, unirse, iniciar, jugar y ver el resultado.
 
 Si algo no se ha podido probar, dilo claramente al usuario. No afirmes que funciona sin haberlo verificado.
@@ -128,11 +143,11 @@ Si algo no se ha podido probar, dilo claramente al usuario. No afirmes que funci
 
 Todo cambio de interfaz debe cumplir estos cinco puntos:
 
-- **No depender solo del color.** Cada jugador se distingue por color y además por forma, y su apodo es visible.
+- **No depender solo del color.** Cada jugador se distingue por color y además por forma, y su apodo es visible. Lo mismo los gadgets (color y símbolo) y la bomba (anillo, icono y texto en el marcador).
 - **Contraste** mínimo de 4,5:1 en textos y 3:1 en elementos gráficos importantes.
 - **Teclado.** Menús y sala de espera se usan enteros con Tab y Enter, con el foco siempre visible. El juego se controla con WASD y con las flechas.
 - **HTML semántico**: botones que son `<button>`, campos con `<label>`, encabezados ordenados.
-- **Lector de pantalla.** Los eventos importantes (un jugador entra, empieza la partida, alguien gana) se anuncian en la región `aria-live`.
+- **Lector de pantalla.** Los eventos importantes (un jugador entra, empieza la partida, quién tiene la bomba, quién queda eliminado, alguien gana) se anuncian en la región `aria-live`.
 
 ## 7. DIARIO.md
 
@@ -158,10 +173,10 @@ Reglas del diario:
 
 ## 8. Fases del proyecto
 
-1. Esqueleto, crear sala y unirse, sala de espera e inicio por el máster.
-2. Mapa aleatorio, movimiento, monedas y victoria.
-3. Pantalla de resultados, endpoint `GET /api/games/:id`, estética y accesibilidad.
-4. Túnel, `start.bat` y prueba real con varios PC.
+1. Esqueleto, crear sala y unirse, sala de espera e inicio por el máster. *(hecha)*
+2. Mapa aleatorio, movimiento, bomba, gadgets y victoria. *(hecha)*
+3. Pantalla de resultados, endpoint `GET /api/games/:id`, estética y accesibilidad. *(hecha)*
+4. Túnel, `start.bat` y prueba real con varios PC. Ajuste de los valores de `config.js` jugando.
 
 Opcional, solo si sobra tiempo y el usuario lo pide: selector de idiomas.
 
@@ -172,6 +187,7 @@ Consulta el `DIARIO.md` para saber en qué fase está el proyecto.
 ```
 npm install     instala dependencias
 npm start       arranca el servidor en http://localhost:3000
-npm test        simula 3 jugadores y una partida completa (tarda menos de un minuto)
+npm test        comprueba las reglas y simula una partida completa (tarda unos 10 segundos)
 start.bat       arranca servidor y túnel, y muestra la URL para compartir
+probar.bat      npm install + npm test con doble clic; deja el resultado en prueba.log
 ```

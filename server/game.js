@@ -1,15 +1,16 @@
 'use strict';
-// Lógica del juego, sin nada de red: mapa aleatorio, movimiento, monedas y victoria.
+// Lógica del juego, sin nada de red: mapa aleatorio, movimiento, bomba, gadgets y victoria.
+
+const CONFIG = require('./config');
 
 const TILE = 40;          // tamaño de una casilla en píxeles
 const COLS = 40;          // casillas de ancho
 const ROWS = 30;          // casillas de alto
-const COIN_COUNT = 50;    // monedas repartidas por el mapa
-const GOAL = 15;          // monedas necesarias para ganar
 const RADIUS = 12;        // radio del jugador
-const COIN_RADIUS = 10;
+const GADGET_RADIUS = 13;
 const SPEED = 220;        // píxeles por segundo
 const TICK_MS = 50;       // el servidor avanza 20 veces por segundo
+const GADGET_TYPES = ['trap', 'gum', 'boost'];
 
 const rand = (n) => Math.floor(Math.random() * n);
 
@@ -51,22 +52,51 @@ function generateMap() {
 }
 
 const center = ([x, y]) => ({ x: x * TILE + TILE / 2, y: y * TILE + TILE / 2 });
+const alivePlayers = (game) => [...game.players.values()].filter((p) => p.alive);
+
+function addGadget(game, type, pos) {
+  const gadget = { id: game.nextGadgetId++, type, x: pos.x, y: pos.y };
+  game.gadgets.set(gadget.id, gadget);
+  return gadget;
+}
+
+// Coloca un gadget nuevo en una casilla sin otro gadget y lejos de los jugadores.
+function respawnGadget(game, type) {
+  let pos = null;
+  for (let i = 0; i < 30; i++) {
+    pos = center(game.reachable[rand(game.reachable.length)]);
+    const taken = [...game.gadgets.values()].some((g) => g.x === pos.x && g.y === pos.y);
+    const near = alivePlayers(game).some((p) => Math.hypot(p.x - pos.x, p.y - pos.y) < TILE * 3);
+    if (!taken && !near) break;
+  }
+  return addGadget(game, type, pos);
+}
 
 // Crea una partida nueva para la lista de jugadores [{id, name, index}].
 function createGame(playerList) {
   const { walls, reachable } = generateMap();
 
-  // Barajar las casillas alcanzables: las 50 primeras son monedas, el resto posibles apariciones.
+  // Barajar las casillas alcanzables: las primeras son gadgets, el resto posibles apariciones.
   for (let i = reachable.length - 1; i > 0; i--) {
     const j = rand(i + 1);
     [reachable[i], reachable[j]] = [reachable[j], reachable[i]];
   }
-  const coins = new Map();
-  reachable.slice(0, COIN_COUNT).forEach((cell, id) => coins.set(id, { id, ...center(cell) }));
-  const spawnCells = reachable.slice(COIN_COUNT);
+
+  const game = {
+    walls, reachable,
+    gadgets: new Map(), nextGadgetId: 0,
+    players: new Map(),
+    time: 0,
+    outCount: 0,
+    // Sin portador y con una pausa: al terminar la pausa se reparte la bomba al azar.
+    bomb: { holderId: null, left: 0, pause: CONFIG.START_COUNTDOWN },
+  };
+
+  const gadgetCount = GADGET_TYPES.length * CONFIG.GADGETS_PER_TYPE;
+  reachable.slice(0, gadgetCount).forEach((cell, i) => addGadget(game, GADGET_TYPES[i % GADGET_TYPES.length], center(cell)));
+  const spawnCells = reachable.slice(gadgetCount);
 
   // Cada jugador aparece lo más lejos posible de los que ya están colocados.
-  const players = new Map();
   const spawns = [];
   for (const info of playerList) {
     let best = null;
@@ -80,14 +110,16 @@ function createGame(playerList) {
       }
     }
     spawns.push(best);
-    players.set(info.id, {
+    game.players.set(info.id, {
       id: info.id, name: info.name, index: info.index,
-      x: best.x, y: best.y, score: 0, scoredAt: 0,
+      x: best.x, y: best.y,
+      alive: true, outOrder: 0,       // outOrder: 1 para el primer eliminado, 2 para el segundo...
+      frozenUntil: 0, slowUntil: 0, boostUntil: 0, immuneUntil: 0,
       input: { up: false, down: false, left: false, right: false },
     });
   }
 
-  return { walls, coins, players, tick: 0 };
+  return game;
 }
 
 // ¿Choca con un muro un jugador centrado en (x, y)?
@@ -99,48 +131,108 @@ function hitsWall(walls, x, y) {
   return walls[y0][x0] || walls[y0][x1] || walls[y1][x0] || walls[y1][x1];
 }
 
-// Avanza la partida dt segundos. Devuelve las monedas recogidas y, si la hay, el id del ganador.
-function step(game, dt) {
-  game.tick++;
-  const collected = [];
+function movePlayer(game, p, dt) {
+  if (game.time < p.frozenUntil) return;
+  const dx = (p.input.right ? 1 : 0) - (p.input.left ? 1 : 0);
+  const dy = (p.input.down ? 1 : 0) - (p.input.up ? 1 : 0);
+  if (!dx && !dy) return;
 
-  for (const p of game.players.values()) {
-    const dx = (p.input.right ? 1 : 0) - (p.input.left ? 1 : 0);
-    const dy = (p.input.down ? 1 : 0) - (p.input.up ? 1 : 0);
-    if (dx || dy) {
-      // Movimiento en pasos pequeños y por ejes, para deslizarse a lo largo de los muros.
-      const dist = SPEED * dt;
-      const steps = Math.ceil(dist / 2);
-      const len = Math.hypot(dx, dy);
-      const sx = (dx / len) * (dist / steps);
-      const sy = (dy / len) * (dist / steps);
-      for (let i = 0; i < steps; i++) {
-        if (!hitsWall(game.walls, p.x + sx, p.y)) p.x += sx;
-        if (!hitsWall(game.walls, p.x, p.y + sy)) p.y += sy;
-      }
-    }
+  let speed = SPEED;
+  if (game.bomb.holderId === p.id) speed *= CONFIG.BOMB_SPEED;
+  if (game.time < p.slowUntil) speed *= CONFIG.GUM_FACTOR;
+  if (game.time < p.boostUntil) speed *= CONFIG.BOOST_FACTOR;
 
-    for (const coin of game.coins.values()) {
-      if (Math.hypot(coin.x - p.x, coin.y - p.y) < RADIUS + COIN_RADIUS) {
-        game.coins.delete(coin.id);
-        p.score++;
-        p.scoredAt = game.tick;
-        collected.push({ id: coin.id, by: p.id });
-      }
+  // Movimiento en pasos pequeños y por ejes, para deslizarse a lo largo de los muros.
+  const dist = speed * dt;
+  const steps = Math.ceil(dist / 2);
+  const len = Math.hypot(dx, dy);
+  const sx = (dx / len) * (dist / steps);
+  const sy = (dy / len) * (dist / steps);
+  for (let i = 0; i < steps; i++) {
+    if (!hitsWall(game.walls, p.x + sx, p.y)) p.x += sx;
+    if (!hitsWall(game.walls, p.x, p.y + sy)) p.y += sy;
+  }
+}
+
+function useGadgets(game, p, events) {
+  for (const g of game.gadgets.values()) {
+    if (Math.hypot(g.x - p.x, g.y - p.y) >= RADIUS + GADGET_RADIUS) continue;
+    game.gadgets.delete(g.id);
+    if (g.type === 'trap') p.frozenUntil = game.time + CONFIG.TRAP_SECONDS;
+    if (g.type === 'gum') p.slowUntil = game.time + CONFIG.GUM_SECONDS;
+    if (g.type === 'boost') p.boostUntil = game.time + CONFIG.BOOST_SECONDS;
+    events.push({ type: 'gadget', kind: g.type, by: p.id, removed: g.id, added: respawnGadget(game, g.type) });
+  }
+}
+
+function updateBomb(game, dt, events) {
+  const bomb = game.bomb;
+  const alive = alivePlayers(game);
+
+  // Nadie tiene la bomba: se espera la pausa y se le da a un jugador vivo al azar.
+  if (bomb.holderId === null) {
+    bomb.pause -= dt;
+    if (bomb.pause <= 0 && alive.length > 1) {
+      bomb.holderId = alive[rand(alive.length)].id;
+      bomb.left = CONFIG.BOMB_SECONDS;
+      events.push({ type: 'bomb', holder: bomb.holderId });
     }
+    return;
   }
 
-  return { collected, winnerId: findWinner(game) };
+  const holder = game.players.get(bomb.holderId);
+  if (!holder || !holder.alive) {  // el portador se ha desconectado
+    bomb.holderId = null;
+    bomb.pause = 1;
+    return;
+  }
+
+  bomb.left -= dt;
+  if (bomb.left <= 0) {
+    holder.alive = false;
+    holder.outOrder = ++game.outCount;
+    bomb.holderId = null;
+    bomb.pause = CONFIG.EXPLOSION_PAUSE;
+    events.push({ type: 'explosion', id: holder.id, x: Math.round(holder.x), y: Math.round(holder.y) });
+    return;
+  }
+
+  // Pasar la bomba al tocar a otro jugador que no sea inmune.
+  const target = alive.find((p) => p.id !== holder.id
+    && game.time >= p.immuneUntil
+    && Math.hypot(p.x - holder.x, p.y - holder.y) < RADIUS * 2 + 2);
+  if (target) {
+    holder.immuneUntil = game.time + CONFIG.PASS_IMMUNITY;
+    target.frozenUntil = Math.max(target.frozenUntil, game.time + CONFIG.RECEIVE_STUN);
+    bomb.holderId = target.id;
+    events.push({ type: 'pass', from: holder.id, to: target.id });
+  }
 }
 
-// Gana quien llega a GOAL. Si se acaban las monedas, quien más tenga (y, si empatan, quien llegó antes).
+// Avanza la partida dt segundos. Devuelve lo que ha pasado y, si la hay, el id del ganador.
+function step(game, dt) {
+  game.time += dt;
+  const events = [];
+  for (const p of alivePlayers(game)) {
+    movePlayer(game, p, dt);
+    useGadgets(game, p, events);
+  }
+  updateBomb(game, dt, events);
+  return { events, winnerId: findWinner(game) };
+}
+
+// Gana el último jugador vivo. (Si los vivos se desconectan todos, el último eliminado.)
 function findWinner(game) {
-  const list = [...game.players.values()];
-  const reached = list.find((p) => p.score >= GOAL);
-  if (reached) return reached.id;
-  if (game.coins.size > 0 || list.length === 0) return null;
-  list.sort((a, b) => b.score - a.score || a.scoredAt - b.scoredAt);
-  return list[0].id;
+  const all = [...game.players.values()];
+  const alive = all.filter((p) => p.alive);
+  if (alive.length > 1 || all.length === 0) return null;
+  if (alive.length === 1) return alive[0].id;
+  return all.sort((a, b) => b.outOrder - a.outOrder)[0].id;
 }
 
-module.exports = { createGame, step, TILE, COLS, ROWS, COIN_COUNT, GOAL, RADIUS, COIN_RADIUS, TICK_MS };
+// Efectos activos de un jugador, para que el cliente los dibuje: t = trampa, g = chicle, b = acelerador.
+function effectsOf(game, p) {
+  return (game.time < p.frozenUntil ? 't' : '') + (game.time < p.slowUntil ? 'g' : '') + (game.time < p.boostUntil ? 'b' : '');
+}
+
+module.exports = { createGame, step, effectsOf, TILE, COLS, ROWS, RADIUS, GADGET_RADIUS, SPEED, TICK_MS };
