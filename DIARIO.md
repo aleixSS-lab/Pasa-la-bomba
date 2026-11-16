@@ -60,3 +60,11 @@ Registro de cómo se ha construido el juego con agentes de IA. Cada sesión aña
 2. `npm start` y jugar con dos pestañas.
 3. Instalar `cloudflared`, ejecutar `start.bat` y probar con otro PC (fase 4).
 4. Anotar aquí lo que falle.
+
+### Actualización de la sesión 1 (mismo día)
+
+- **Primera prueba real superada.** El alumno ejecutó `probar.bat` en el portátil: Node.js v25.3.0, `npm install` sin errores (96 paquetes, 0 vulnerabilidades) y `npm test` con «Todo correcto» usando ya Express y Socket.IO reales. El código no necesitó ningún cambio respecto a lo probado con los sustitutos. Sigue sin probarse `start.bat` ni el túnel.
+- **Prompt:** «te doy permiso a instalar npm». No era un problema de permiso sino de red: el entorno de la IA tiene bloqueado el registro de npm y tampoco puede teclear en la terminal de Windows. Solución: un `probar.bat` de doble clic que guarda el resultado en `prueba.log`, que la IA sí puede leer.
+- **Prompt:** «invita a mi compañera […] sube el repositorio a github y ponlo como público». La IA no pudo crear el repositorio ni invitar: su acceso a GitHub solo funciona con repositorios ya existentes y autorizados para la sesión. Dejó configurado el remoto y un `subir.bat`; crear el repositorio vacío e invitar a la compañera lo hace el alumno en la web.
+- **Corrección de privacidad.** El primer commit llevaba el correo personal del alumno como autor. Como el repositorio va a ser público, la IA rehízo ese commit (todavía sin subir) con la dirección anónima de GitHub. Es la única vez que se ha reescrito historial.
+- **Para investigar:** qué es un remoto de git (`origin`) y la diferencia entre `commit` y `push`.
