@@ -126,3 +126,32 @@ Registro de cómo se ha construido el juego con agentes de IA. Cada sesión aña
 1. Doble clic en `probar.bat` para confirmar la prueba en Windows, y `git push` (o `subir.bat`) para subir estos cambios.
 2. Jugar una partida real con Adriana y ajustar `server/config.js`.
 3. Fase 4: instalar `cloudflared`, probar `start.bat` y jugar desde otro PC.
+
+---
+
+## Sesión 3 — 2026-11-16 — La compañera no podía entrar al servidor local
+
+**Herramienta:** Claude en modo Cowork. A partir de esta sesión el modelo configurado pasa a ser `claude-opus-5-5`.
+
+**Qué se pidió:** «No deja acceder a Adriana a mi local, arréglalo».
+
+**Qué se hizo:**
+
+- **Fallo encontrado en el juego.** El enlace de invitación de la sala de espera se construía con la dirección con la que el máster abría la página. Si el máster entraba por `http://localhost:3000`, el enlace también decía `localhost`, y en el PC de la compañera «localhost» es su propio ordenador, así que no llegaba nunca al portátil.
+- **Arreglo.** El servidor tiene un endpoint nuevo, `GET /api/lan`, con las direcciones del portátil en la red local. Si el máster ha entrado por `localhost`, el cliente pide esas direcciones y monta el enlace con la primera. Debajo del enlace aparece una nota que dice si sirve para la misma WiFi o solo para ese ordenador.
+- Se descartan los adaptadores de red virtuales (VirtualBox, WSL, Hyper-V…). El portátil tiene VirtualBox instalado, y su red interna (`192.168.56.x`) habría dado un enlace que nadie más puede usar.
+- Al arrancar, el servidor avisa de revisar el Firewall de Windows si otro PC no puede entrar.
+
+**Decisiones y por qué:**
+
+- **El firewall no lo toca la IA.** Cambiar la configuración de seguridad de Windows no lo hace un agente; se le explicó al alumno cómo permitir Node.js.
+- **Si la WiFi del instituto aísla los dispositivos** entre sí, no hay arreglo en el código: la solución es el túnel (fase 4).
+
+**Qué falló y cómo se arregló:**
+
+- El fallo venía de la primera versión y ninguna prueba lo detectó, porque todas se hacían desde el mismo ordenador. Lección: probar desde otro PC antes de dar por buena la parte de red.
+- Al verificarlo, el navegador del entorno de la IA no pudo unirse por la dirección de red: su proxy rechazaba la conexión WebSocket. Una conexión directa a esa misma dirección sí funcionó, así que el servidor acepta jugadores de la red, pero la prueba completa desde otro PC la tiene que hacer el alumno.
+
+**Pendiente de investigar por el alumno:** qué es `localhost` y por qué cada ordenador tiene el suyo; qué es una IP de red local; qué hace un firewall.
+
+**Siguiente paso:** probar de nuevo con Adriana; si sigue sin entrar, revisar el firewall y, si la red del centro lo bloquea, pasar al túnel.

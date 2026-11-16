@@ -19,6 +19,23 @@ const invited = new URLSearchParams(location.search).get('sala');
 if (invited) $('code').value = invited.toUpperCase().slice(0, 4);
 $('name').focus();
 
+// Si el máster ha abierto el juego con localhost, el enlace de invitación tiene que llevar
+// la dirección del portátil en la red local; si no, en el PC del invitado apuntaría a sí mismo.
+let shareOrigin = location.origin;
+let shareNote = '';
+if (['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) {
+  shareNote = t('share_local_only');
+  fetch('api/lan')
+    .then((r) => r.json())
+    .then((info) => {
+      if (!info.addresses.length) return;
+      shareOrigin = `${location.protocol}//${info.addresses[0]}:${location.port || info.port}`;
+      shareNote = t('share_lan');
+      if (room && room.status === 'lobby') renderLobby();
+    })
+    .catch(() => { /* se queda el enlace con localhost */ });
+}
+
 // ---------- Pantallas ----------
 
 function show(name) {
@@ -77,7 +94,8 @@ const isHost = () => room && room.hostId === socket.id;
 
 function renderLobby() {
   $('lobby-code').textContent = room.code;
-  $('share-url').value = `${location.origin}${location.pathname}?sala=${room.code}`;
+  $('share-url').value = `${shareOrigin}${location.pathname}?sala=${room.code}`;
+  $('share-note').textContent = shareNote;
   $('lobby-count').textContent = t('players_count', { n: room.players.length });
   $('lobby-players').replaceChildren(...room.players.map((p) => {
     const tags = [p.id === room.hostId && t('host'), p.id === socket.id && t('you')].filter(Boolean);

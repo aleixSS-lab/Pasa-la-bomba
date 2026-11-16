@@ -21,6 +21,8 @@ const I18N = {
     share_label: 'Enlace para invitar',
     copy: 'Copiar',
     copied: 'Enlace copiado',
+    share_lan: 'Este enlace sirve para quien esté conectado a tu misma WiFi.',
+    share_local_only: 'Este enlace solo funciona en este ordenador: no se ha encontrado ninguna red. Usa start.bat para jugar por internet.',
     players_count: 'Jugadores ({n} de 8)',
     host: 'máster',
     you: 'tú',

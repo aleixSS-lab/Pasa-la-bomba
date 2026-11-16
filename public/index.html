@@ -46,9 +46,10 @@
 
       <label for="share-url" data-i18n="share_label"></label>
       <div class="row">
-        <input id="share-url" type="text" readonly>
+        <input id="share-url" type="text" readonly aria-describedby="share-note">
         <button type="button" id="btn-copy" data-i18n="copy"></button>
       </div>
+      <p id="share-note" class="note"></p>
 
       <h2 id="lobby-count"></h2>
       <ul id="lobby-players" class="players"></ul>
