@@ -1,0 +1,62 @@
+# Diario de desarrollo — Coin Rush (DevChallenge3)
+
+Registro de cómo se ha construido el juego con agentes de IA. Cada sesión añade una entrada al final. Las normas del diario están en `CLAUDE.md`, sección 7.
+
+---
+
+## Sesión 1 — 2026-11-16 — Planteamiento, normas y primera versión jugable
+
+**Herramienta:** Claude en modo Cowork (aplicación de escritorio), modelo configurado `claude-fable-5-2`. Un único agente; no se usaron subagentes ni otras IA.
+
+**Qué se pidió** (cinco prompts, en este orden):
+
+1. «Planteame este challenge» — con el enunciado del instituto como descripción del proyecto.
+2. «El juego estará corriendo todo en un portátil, lee las características del portátil y hazme las preguntas necesarias».
+3. «Créame el CLAUDE.md para que otros agentes puedan cumplir las normas del proyecto, hazme preguntas para crear el definitivo».
+4. «Analiza el planteamiento y verifica que todo cumpla para hacer un proyecto pequeño […] no nos vamos a gastar dinero […] un portátil corriendo como servidor».
+5. «Recorta y añade lo que tengas que hacer y tienes vía libre, utiliza los agentes que necesites».
+
+**Qué se hizo:**
+
+- Planteamiento del juego: 2 a 8 jugadores, mapa aleatorio, 50 monedas, gana quien llega a 15.
+- Dos rondas de preguntas tipo test al alumno (conexión, dispositivos, lenguaje, herramientas de IA; idioma, diario, dependencias, normas).
+- `CLAUDE.md` con las normas para cualquier agente, y después su versión recortada.
+- Juego completo (fases 1 a 3): servidor con salas, sala de espera y máster; mapa aleatorio; movimiento, monedas y victoria; pantalla de resultados; endpoint `GET /api/games/:id`; interfaz accesible.
+- Prueba automática `npm test` que simula 3 jugadores y una partida entera.
+- `start.bat` para arrancar servidor y túnel (fase 4, a medias: ver «Qué falló»).
+
+**Decisiones y por qué:**
+
+- **Node.js + Express + Socket.IO.** Un solo lenguaje en servidor y cliente, y WebSockets resuelve el «protocolo asíncrono» del enunciado. Se descartaron Python, Java y .NET (también instalados en el portátil) por requerir más código para lo mismo. Lo eligió el alumno entre cuatro opciones.
+- **Cliente sin framework** (HTML, Canvas y JS). Suficiente para un juego así y más fácil de explicar.
+- **Servidor autoritativo.** El navegador solo envía las teclas; el servidor decide posiciones, monedas y ganador. Evita trampas y que cada jugador vea algo distinto.
+- **Túnel de Cloudflare** para jugar por internet con el portátil como servidor, sin pagar hosting. Plan B: misma red WiFi. Se descartó desplegar en la nube.
+- **Sin login ni base de datos.** Apodo y código de sala de 4 letras; todo en memoria.
+- **Regla añadida por la IA:** con varios jugadores las 50 monedas pueden acabarse sin que nadie llegue a 15 (por ejemplo 13, 13, 12, 12). En ese caso gana quien más tenga. El enunciado no lo contemplaba.
+- **Textos en un único archivo** (`i18n.js`), porque el alumno quiere añadir más adelante un selector de idiomas.
+- **Jugador = color + forma**, para no depender solo del color (accesibilidad).
+- **Subagentes:** el alumno dio permiso para usarlos, pero no se usaron; el proyecto es pequeño y repartirlo habría costado más que hacerlo seguido.
+
+**Qué falló y cómo se arregló:**
+
+- **El primer planteamiento era demasiado grande.** La IA propuso 7 fases, servidor en 4 archivos, mapa con semilla, siete requisitos de accesibilidad y selector de idiomas obligatorio. El alumno tuvo que reformular (prompt 4) recordando que es un miniproyecto de instituto sin presupuesto. Resultado: 4 fases, 2 archivos de servidor, 5 requisitos de accesibilidad y selector de idiomas opcional.
+- **La IA no pudo leer bien el portátil.** Solo vio el procesador y el sistema operativo; ni la memoria RAM ni si Node.js está instalado en Windows, porque accede a la carpeta desde un entorno aislado. Lo dijo y quedó como comprobación pendiente.
+- **La IA no pudo instalar las librerías reales.** Su entorno no tiene acceso al registro de npm (error 403), ni desde la nube ni desde el portátil. Para poder probar igualmente escribió unos sustitutos mínimos de Express y Socket.IO, solo para la prueba y que no forman parte del proyecto. Con ellos la prueba automática y el flujo en navegador (dos jugadores, capturas de pantalla revisadas) pasaron a la primera. **Consecuencia: el juego todavía no se ha ejecutado con las librerías reales ni en Windows.**
+- **`start.bat` y el túnel no están probados.** No se pueden ejecutar desde el entorno de la IA. Tampoco se pudo confirmar leyendo la documentación que el túnel rápido de Cloudflare siga siendo gratuito y sin cuenta; se da por bueno por conocimiento previo.
+- **Un solo commit en vez de uno por fase.** Las fases 1 a 3 se escribieron seguidas en la misma sesión, así que no hay un commit por fase como pide `CLAUDE.md`.
+- Retoques menores tras ver las capturas: el marcador tenía el «15» escrito a mano en vez de leerlo del servidor, y el enlace a la API quedaba pegado a la clasificación.
+
+**Pendiente de investigar por el alumno:**
+
+- Qué es un WebSocket y en qué se diferencia de una petición HTTP normal (y qué añade Socket.IO).
+- Qué significa «servidor autoritativo» y por qué el cliente no decide quién coge la moneda.
+- Qué hace un túnel (Cloudflare Tunnel) y por qué permite entrar a un portátil desde internet sin abrir puertos.
+- Cómo se comprueba que todo el mapa es alcanzable (relleno por inundación o *flood fill*).
+- Qué es un endpoint REST y qué devuelve `GET /api/games/:id`.
+
+**Siguiente paso:**
+
+1. En el portátil: comprobar `node -v`, ejecutar `npm install` y `npm test`. Es la primera prueba con las librerías reales.
+2. `npm start` y jugar con dos pestañas.
+3. Instalar `cloudflared`, ejecutar `start.bat` y probar con otro PC (fase 4).
+4. Anotar aquí lo que falle.

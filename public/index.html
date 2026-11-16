@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coin Rush</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Todos los textos se rellenan desde js/i18n.js mediante el atributo data-i18n -->
+  <main>
+    <!-- Pantalla de inicio -->
+    <section id="screen-home" class="card" aria-labelledby="home-title">
+      <h1 id="home-title" tabindex="-1" data-i18n="title"></h1>
+      <p class="tagline" data-i18n="tagline"></p>
+
+      <form id="form-home" novalidate>
+        <label for="name" data-i18n="name_label"></label>
+        <input id="name" type="text" maxlength="12" autocomplete="nickname">
+
+        <button type="button" id="btn-create" class="primary" data-i18n="create_room"></button>
+
+        <p class="separator" data-i18n="or_join"></p>
+
+        <label for="code" data-i18n="code_label"></label>
+        <div class="row">
+          <input id="code" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <button type="submit" id="btn-join" data-i18n="join_room"></button>
+        </div>
+      </form>
+      <p id="error" class="error" role="alert"></p>
+
+      <h2 data-i18n="how_title"></h2>
+      <ul class="how">
+        <li data-i18n="how_1"></li>
+        <li data-i18n="how_2"></li>
+        <li data-i18n="how_3"></li>
+      </ul>
+    </section>
+
+    <!-- Sala de espera -->
+    <section id="screen-lobby" class="card" aria-labelledby="lobby-title" hidden>
+      <h1 id="lobby-title" tabindex="-1" data-i18n="lobby_title"></h1>
+      <p class="code-line"><span data-i18n="room_code"></span> <strong id="lobby-code"></strong></p>
+
+      <label for="share-url" data-i18n="share_label"></label>
+      <div class="row">
+        <input id="share-url" type="text" readonly>
+        <button type="button" id="btn-copy" data-i18n="copy"></button>
+      </div>
+
+      <h2 id="lobby-count"></h2>
+      <ul id="lobby-players" class="players"></ul>
+
+      <p id="lobby-status" class="status"></p>
+      <p id="lobby-error" class="error" role="alert"></p>
+      <div class="row">
+        <button type="button" id="btn-start" class="primary" data-i18n="start_game"></button>
+        <button type="button" id="btn-leave" data-i18n="leave"></button>
+      </div>
+    </section>
+
+    <!-- Partida -->
+    <section id="screen-game" aria-labelledby="game-title" hidden>
+      <h1 id="game-title" class="sr-only" tabindex="-1" data-i18n="game_title"></h1>
+      <canvas id="canvas" role="img" data-i18n-label="canvas_label"></canvas>
+      <ol id="hud" class="players hud" data-i18n-label="scoreboard"></ol>
+      <p class="hint" data-i18n="controls_hint"></p>
+    </section>
+
+    <!-- Resultados -->
+    <section id="screen-results" class="card" aria-labelledby="results-title" hidden>
+      <h1 id="results-title" tabindex="-1"></h1>
+      <h2 data-i18n="ranking"></h2>
+      <ol id="ranking" class="players"></ol>
+      <p><a id="api-link" target="_blank" rel="noopener" data-i18n="api_link"></a></p>
+      <p id="results-status" class="status"></p>
+      <div class="row">
+        <button type="button" id="btn-again" class="primary" data-i18n="play_again"></button>
+        <button type="button" id="btn-leave2" data-i18n="leave"></button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Anuncios para lectores de pantalla -->
+  <div id="live" class="sr-only" aria-live="polite"></div>
+
+  <script src="socket.io/socket.io.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

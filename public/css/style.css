@@ -1,0 +1,147 @@
+/* Tema oscuro con alto contraste. Colores de texto comprobados a 4,5:1 o más sobre su fondo. */
+:root {
+  --bg: #0d101a;
+  --card: #1b2033;
+  --line: #4a5a94;
+  --text: #f1f3f5;
+  --muted: #c1c7d6;
+  --gold: #ffd43b;
+  --dark: #14161f;
+  --error: #ffa8a8;
+  --focus: #74c0fc;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+main {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+h1 { margin: 0 0 4px; font-size: 2.2rem; line-height: 1.15; color: var(--gold); }
+h1:focus { outline: none; }
+h2 { margin: 28px 0 8px; font-size: 1.1rem; }
+p { margin: 0 0 12px; }
+.tagline { color: var(--muted); margin-bottom: 24px; }
+
+label { display: block; margin: 14px 0 6px; font-weight: 600; }
+
+input {
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+}
+#code { text-transform: uppercase; letter-spacing: 0.3em; font-weight: 700; }
+
+button {
+  min-height: 46px;
+  padding: 8px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  background: #2c365a;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+button:hover { background: #38446f; }
+button.primary { color: var(--dark); background: var(--gold); border-color: var(--gold); }
+button.primary:hover { background: #ffe066; }
+button:disabled { color: var(--muted); background: #262b3d; border-color: #262b3d; cursor: not-allowed; }
+#btn-create { width: 100%; margin-top: 16px; }
+
+/* Foco siempre visible para quien navega con teclado */
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.row { display: flex; gap: 10px; align-items: stretch; }
+.row input { flex: 1; min-width: 0; }
+.row button.primary { flex: 1; }
+
+.separator { margin: 22px 0 0; text-align: center; color: var(--muted); }
+.error { min-height: 1.5em; margin: 12px 0 0; color: var(--error); font-weight: 600; }
+.status { margin-top: 16px; color: var(--muted); }
+.how { margin: 0; padding-left: 20px; color: var(--muted); }
+.how li { margin-bottom: 4px; }
+a { color: var(--focus); }
+#api-link { display: inline-block; margin-top: 12px; }
+
+.code-line { font-size: 1.1rem; }
+.code-line strong { font-size: 1.6rem; letter-spacing: 0.25em; color: var(--gold); margin-left: 6px; }
+
+/* Listas de jugadores: sala de espera, marcador y clasificación */
+.players { list-style: none; margin: 0; padding: 0; }
+.players li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: var(--bg);
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+.players li.me { border-color: var(--text); }
+.symbol { font-size: 1.3rem; width: 1.3em; text-align: center; line-height: 1; }
+.name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.tag { color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+ol.players { counter-reset: pos; }
+#ranking li::before { counter-increment: pos; content: counter(pos) "."; color: var(--muted); width: 1.4em; }
+
+/* Partida: el canvas ocupa toda la ventana y el marcador flota encima */
+body.playing main { padding: 0; display: block; height: 100%; }
+#screen-game { position: relative; width: 100%; height: 100%; overflow: hidden; }
+#canvas { display: block; width: 100%; height: 100%; }
+.hud { position: absolute; top: 12px; left: 12px; width: 210px; }
+.hud li { padding: 4px 10px; margin-bottom: 4px; background: rgba(13, 16, 26, 0.88); font-size: 0.95rem; }
+.hud .tag { color: var(--text); font-weight: 700; }
+.hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  margin: 0;
+  padding: 4px 10px;
+  background: rgba(13, 16, 26, 0.88);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+/* Texto solo para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+[hidden] { display: none !important; }
