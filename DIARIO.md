@@ -1,8 +1,86 @@
-# Diario de desarrollo — Coin Rush (DevChallenge3)
+# Diario de desarrollo — Pasa la bomba (DevChallenge3)
 
-Registro de cómo se ha construido el juego con agentes de IA. Cada sesión añade una entrada al final. Las normas del diario están en `CLAUDE.md`, sección 7.
+Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes: un **resumen para la presentación**, que se actualiza al final de cada sesión, y las **sesiones**, una entrada por sesión que no se modifica después. Las normas están en `CLAUDE.md`, sección 7.
+
+> El juego empezó llamándose **Coin Rush** (recoger monedas) y en la sesión 2 pasó a ser **Pasa la bomba**. Las entradas de la sesión 1 hablan todavía de monedas.
 
 ---
+
+# Resumen para la presentación
+
+*Última actualización: sesión 5, 18-11-2026.*
+
+## Estado actual
+
+- **Funciona:** salas con código, sala de espera con máster, mapa aleatorio, bomba, gadgets, eliminación, resultados, endpoint `GET /api/games/:id`, prueba automática (`npm test`) superada en Windows con las librerías reales.
+- **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
+- **Sin probar:** `start.bat` con el túnel de Cloudflare, y una partida real entre personas en PC distintos.
+- **Fase:** 4 de 5 (red real y ajuste jugando).
+- **Entrega:** hacia el 2-12-2026.
+- **Idea sin decidir:** versión `.exe` además de la web.
+
+## Sesiones
+
+| # | Fecha | Tema | Resultado |
+|---|---|---|---|
+| 1 | 16-11 | Planteamiento, `CLAUDE.md` y primera versión (Coin Rush) | Jugable; planteamiento inicial recortado por el alumno |
+| 2 | 16-11 | Cambio de objetivo a Pasa la bomba | Idea del alumno + 4 ajustes de la IA; pruebas a la primera |
+| 3 | 16-11 | La compañera no podía entrar | Causa encontrada (`localhost`); el arreglo del servidor se perdió |
+| 4 | 18-11 | Iconos dibujados de gadgets y bomba | La IA rehízo la trampa de oso al ver que no se reconocía |
+| 5 | 18-11 | Mejora de `CLAUDE.md`, diario y `README.md` | Detectado el fallo perdido de la sesión 3 |
+
+## 1. Herramientas de IA
+
+- **Claude** (Anthropic) en la aplicación de escritorio, con acceso a la carpeta del proyecto. Modelo `claude-fable-5-2` en las sesiones 1 y 2, `claude-opus-5-5` desde la sesión 3.
+- **Codex / ChatGPT** (OpenAI), que usa Adriana. Desde la sesión 5 hay un `AGENTS.md` para que su agente siga las mismas normas.
+- Sesiones 1 a 5: Aleix con Claude, un único agente, sin subagentes.
+- `CLAUDE.md` hace de «contrato»: cualquier agente lo lee antes de tocar nada.
+
+## 2. La idea y cómo se pidió
+
+- Se partió del enunciado del instituto pegado tal cual: «Planteame este challenge».
+- La IA hizo **preguntas tipo test** antes de programar (conexión, dispositivos, lenguaje, idioma, diario…), y con las respuestas se escribió `CLAUDE.md`.
+- Primera idea: la del ejemplo del enunciado (monedas, gana quien recoge 15 de 50), que la IA desarrolló. Segunda idea (**del alumno**): pasa la bomba con gadgets; la IA solo propuso ajustes para que fuera jugable.
+
+## 3. Prompts clave y a dónde llevaron
+
+| Prompt (resumido) | A dónde llevó |
+|---|---|
+| «Créame el CLAUDE.md… hazme preguntas» | Normas escritas antes que el código; el resto de sesiones las respetan |
+| «Analiza… que sea un proyecto pequeño, no nos vamos a gastar dinero» | Recorte de 7 a 4 fases; túnel gratuito en vez de hosting |
+| «Recorta… tienes vía libre» | Fases 1 a 3 hechas en una sola sesión |
+| «Te doy permiso a instalar npm» | No era un permiso sino la red bloqueada → `probar.bat` + `prueba.log` |
+| «Cambia el objetivo… mejórame las ideas» | Pasa la bomba; la IA añadió velocidad extra, inmunidad, parada al recibir y espectadores |
+| «No deja acceder a Adriana a mi local» | Lección: probar la red desde otro PC |
+| «Que los emoticonos sean tal cual lo que son» | Dibujos en canvas en vez de emojis |
+
+## 4. Qué tuvo que investigar el alumno
+
+La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defenderlas. Lista acumulada (detalle en cada sesión):
+
+- WebSocket frente a HTTP, y qué añade Socket.IO.
+- Servidor autoritativo.
+- Túnel de Cloudflare y por qué no hace falta abrir puertos.
+- `localhost`, IP de red local y firewall.
+- Endpoint REST (`GET /api/games/:id`).
+- Detección de choques (distancia entre centros) y *flood fill* para el mapa.
+- Canvas 2D (`arc`, `lineTo`, `fill`) e imágenes `data:`.
+- Git: remoto, `commit` frente a `push`.
+
+## 5. Qué no funcionó a la primera
+
+- **Planteamiento demasiado grande** → el alumno lo reformuló pidiendo algo pequeño y gratis.
+- **La IA no puede instalar npm ni usar Windows** → `probar.bat` y lectura de `prueba.log`.
+- **La IA no puede crear el repositorio en GitHub** → lo creó el alumno; la IA dejó `subir.bat`.
+- **Correo personal en el primer commit** → rehecho con la dirección anónima antes de subir.
+- **Bomba que se devolvía sin parar** → la IA añadió por su cuenta la parada de medio segundo al recibirla.
+- **Enlace de invitación con `localhost`** → arreglo en la sesión 3 que **no se guardó** en el servidor; detectado en la sesión 5.
+- **Trampa de oso irreconocible** → la IA lo vio en las capturas y la redibujó.
+- **Lo que las pruebas automáticas no dicen:** si el juego es divertido o está equilibrado. Hace falta jugar con personas.
+
+---
+
+# Sesiones
 
 ## Sesión 1 — 2026-11-16 — Planteamiento, normas y primera versión jugable
 
@@ -187,3 +265,57 @@ Registro de cómo se ha construido el juego con agentes de IA. Cada sesión aña
 **Pendiente de investigar por el alumno:** cómo se dibuja con la API Canvas 2D (`arc`, `lineTo`, `fill`, `stroke`) y qué es una imagen `data:` (`toDataURL`).
 
 **Siguiente paso:** hacer más visibles los jugadores (la segunda parte de la petición), probar con Adriana y subir los commits pendientes.
+
+---
+
+## Sesión 5 — 2026-11-18 — Mejora de las instrucciones: CLAUDE.md, diario y README
+
+**Autor:** Aleix.
+
+**Herramienta:** Claude en la aplicación de escritorio, modelo `claude-opus-5-5`.
+
+**Qué se pidió:**
+
+1. «Vamos a mejorar las instrucciones, tanto claude.md, diario.md y el readme.md».
+2. «Hazme las preguntas para mejorar la precisión de los próximos modelos».
+
+**Qué se hizo:**
+
+- **`README.md` nuevo** (no existía): qué es el juego, reglas, cómo arrancarlo en local, en red local y por túnel, controles, API, estructura, accesibilidad y enlace al diario.
+- **`DIARIO.md`:** título corregido (decía «Coin Rush»), y un **resumen para la presentación** arriba que responde a las cinco preguntas del profesorado, con tabla de sesiones y estado actual. Las entradas anteriores no se han tocado.
+- **`CLAUDE.md`:**
+  - Lista de comprobación al empezar cada sesión (leer diario, `git status`, `npm test`).
+  - Sección nueva con las limitaciones del entorno de la IA aprendidas hasta ahora (npm, Windows, WebSocket por IP, GitHub, firewall).
+  - Al probar: comprobar que los cambios están de verdad en el disco, y probar la red desde otro PC.
+  - Git al día: repositorio público, autor anónimo, quién hace el `push`.
+  - Endpoints documentados con sus campos, incluido `/api/lan`.
+  - Aclarado qué números van en `config.js` y cuáles no (antes la norma decía «todos» y no se cumplía con el tamaño del mapa ni el máximo de jugadores).
+  - Quitado un ejemplo que quedaba de las monedas (`coin_collected`).
+  - Fases al día, con los pendientes conocidos y una fase 5 de presentación.
+- **Segunda ronda, con preguntas tipo test al alumno** para que los próximos agentes acierten más. Respuestas y lo que cambió:
+  - *Adriana es coautora y usa Codex/ChatGPT* → `AGENTS.md` nuevo que remite a `CLAUDE.md`, y campo **Autor** en cada entrada del diario.
+  - *Fallos fuera de la petición: avisar y preguntar* → norma nueva en `CLAUDE.md`.
+  - *El agente hace commit y push al cerrar cada sesión* → antes había que pedirlo; ahora con `git pull` previo por si el otro coautor ha subido cambios.
+  - *Respuestas breves con «para investigar»* → norma de cómo responder.
+  - *Solo PC con teclado; habrá versión web y `.exe`* → el `.exe` queda como idea sin decidir (no se sabe si solo arranca el servidor o es el juego entero) y necesitará permiso para añadir una herramienta de empaquetado.
+  - *Entrega en unas dos semanas* → fecha aproximada en `CLAUDE.md` y en el resumen.
+
+**Decisiones y por qué:**
+
+- **El resumen va arriba y es lo único editable del diario.** Las entradas siguen siendo intocables (honestidad), pero el profesorado necesita una vista rápida, y montarla al final a partir de cinco sesiones sería mucho trabajo.
+- **El README no repite los valores de `config.js`**, para que no se desfase cuando el alumno los ajuste.
+- **Un fallo antiguo no se corrige reescribiendo su entrada**, sino anotándolo en la sesión en que se descubre. Queda escrito en `CLAUDE.md`.
+
+**Qué falló y cómo se arregló:**
+
+- **El arreglo de la sesión 3 no está en el servidor.** Al revisar el código para documentar la API, la IA vio que `public/js/main.js` llama a `GET /api/lan`, pero `server/index.js` no tiene ese endpoint: el commit de la sesión 3 incluye el cliente y el diario, pero no el servidor. El cliente, al no recibir respuesta, se queda con `localhost`, así que **el problema de Adriana sigue sin resolverse**. Tampoco están el filtro de adaptadores virtuales ni el aviso del firewall al arrancar. La sesión 3 se dio por buena sin comprobar que todos los archivos se habían guardado. **Todavía no se ha arreglado**: esta sesión era solo de documentación y se ha consultado al alumno.
+- Para que no se repita, `CLAUDE.md` obliga ahora a comprobar con `git status` y `grep` que los cambios están en el disco antes de hacer commit.
+
+**Pendiente de investigar por el alumno:** qué es un `README` y por qué es lo primero que se mira en un repositorio; qué es Markdown.
+
+**Siguiente paso:**
+
+1. Añadir `GET /api/lan` al servidor y comprobarlo desde el PC de Adriana.
+2. Hacer más visibles a los jugadores (pendiente de la sesión 4).
+3. Probar `start.bat` con el túnel.
+4. Subir los commits a GitHub.
