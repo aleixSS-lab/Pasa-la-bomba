@@ -120,6 +120,7 @@ DevChallenge3/
 │   └── game.js            mapa aleatorio, movimiento, bomba, gadgets y victoria (sin red)
 ├── public/
 │   ├── index.html
+│   ├── favicon.svg        icono de la pestaña del navegador (la bomba del juego, en SVG)
 │   ├── css/style.css
 │   └── js/
 │       ├── i18n.js        todos los textos

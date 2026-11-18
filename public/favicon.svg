@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Icono de la pestaña: la misma bomba que se dibuja en el juego (public/js/game.js, drawBombIcon). -->
+  <title>Pasa la bomba</title>
+  <!-- boquilla -->
+  <rect x="35" y="15" width="13" height="10" rx="1" transform="rotate(45 41.5 20)" fill="#868e96" stroke="#f1f3f5" stroke-width="2.5"/>
+  <!-- cuerpo con borde claro, para que se vea sobre pestañas oscuras y claras -->
+  <circle cx="25" cy="39" r="22.5" fill="#212529" stroke="#f1f3f5" stroke-width="4"/>
+  <!-- brillo -->
+  <ellipse cx="16" cy="30" rx="6.5" ry="3.8" transform="rotate(-40 16 30)" fill="#ffffff" fill-opacity="0.35"/>
+  <!-- mecha -->
+  <path d="M45 18 Q47 7 54 8" fill="none" stroke="#e9d8a6" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- chispa -->
+  <polygon points="55,1 57,6 62,4 59,9 64,11 59,13 61,18 56,15 54,20 52,15 47,17 50,12 45,9 50,8 48,3 53,5" fill="#ff922b"/>
+  <circle cx="55" cy="10" r="3" fill="#fff3bf"/>
+</svg>

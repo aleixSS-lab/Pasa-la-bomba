@@ -8,7 +8,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 9, 18-11-2026.*
+*Última actualización: sesión 10, 18-11-2026.*
 
 ## Estado actual
 
@@ -33,6 +33,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 7 | 18-11 | Publicar el juego gratis en internet | Vercel y Supabase descartados tras leer su documentación; publicado en Render desde el Chrome del alumno |
 | 8 | 18-11 | Subir a GitHub sin clics | El agente pregunta «¿Subo los cambios?» y, con el sí, una tarea de Windows los sube; GitHub Actions abre el pull request |
 | 9 | 18-11 | Documentar siempre y aprovechar ramas | Lista de documentos que actualizar al terminar cada tarea; las ramas salen de la rama que se aprovecha |
+| 10 | 18-11 | Icono en la pestaña del navegador | La bomba del juego como favicon en SVG; probado a 16 y 32 px sobre pestañas claras y oscuras |
 
 ## 1. Herramientas de IA
 
@@ -492,3 +493,34 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Pendiente de investigar por el alumno:** qué significa que una rama «sale de» otra; qué pasa con un pull request cuya rama sale de otra que todavía no se ha fusionado.
 
 **Siguiente paso:** fusionar en orden `docs-instrucciones`, `net-render`, `net-autosubida` y esta; arreglar `/api/lan` si se pide.
+
+---
+
+## Sesión 10 — 2026-11-18 — Icono de la bomba en la pestaña del navegador
+
+**Autor:** Aleix.
+**Herramienta:** Claude en modo Cowork, modelo configurado `claude-opus-5-5`. Es la misma conversación que las sesiones 7 y 8; la entrada va aparte porque entre medias se escribió la sesión 9 en otra conversación.
+
+**Qué se pidió:** «Vamos a ponerle un emoticono en la página web».
+
+**Qué se hizo:**
+
+- `public/favicon.svg`: la bomba del juego (cuerpo negro con borde claro, boquilla, mecha y chispa) como icono de la pestaña del navegador, enlazada desde `public/index.html`.
+- Se hizo el cuerpo algo más grande después de verlo a 16 px, porque se quedaba pequeño en el cuadrado.
+- `CLAUDE.md`: el archivo nuevo en la estructura (sección 5).
+
+**Decisiones y por qué:**
+
+- **«Emoticono en la página web» se interpretó como el icono de la pestaña** (decisión de la IA, sin preguntar). Es donde una web suele llevar su emoticono y no cambia nada del juego.
+- **Dibujo propio en SVG en vez del emoji 💣**, por lo mismo que en la sesión 4: un emoji cambia según el sistema y aquí la bomba es la misma que se ve en la partida. SVG se ve nítido a cualquier tamaño y no necesita herramientas para generar imágenes.
+- **Borde claro alrededor de la bomba**, para que se distinga tanto en pestañas claras como oscuras (accesibilidad, contraste de elementos gráficos).
+- **La rama `view-icono-pestana` sale de `docs-flujo-agentes`**, la más avanzada sin fusionar, como pide la norma de la sesión 9. Hay que fusionarla después de esa.
+
+**Qué falló y cómo se arregló:**
+
+- **El portátil estaba en otra rama** (`docs-flujo-agentes`), creada por otra conversación mientras esta trabajaba. Se revisó antes de empezar y se partió de ella, sin pisar nada.
+- En la prueba, el servidor de pruebas de la IA sirvió el SVG como `application/octet-stream`. Es cosa de su servidor simplificado; Express, el real, lo sirve como `image/svg+xml`. Falta verlo en la web publicada cuando se fusione en `main`.
+
+**Pendiente de investigar por el alumno:** qué es un *favicon* y por qué SVG (gráficos vectoriales) se ve bien a cualquier tamaño.
+
+**Siguiente paso:** fusionar en orden los pull requests pendientes; ver el icono en la pestaña de la web de Render.
