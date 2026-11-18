@@ -6,6 +6,7 @@ Las normas del proyecto están en **[CLAUDE.md](CLAUDE.md)** y valen para cualqu
 
 Lo imprescindible:
 
+- **Si trabajas para Adriana: solo tareas ligeras sin preguntar.** Su ordenador no aguanta tareas pesadas. Ligeras: ramas `view-` (CSS, HTML, dibujos del canvas, textos), documentación, un `npm test` y una comprobación rápida en el navegador con una pestaña. Pesadas, **pregúntale antes de empezar**: cambios en `server/` o de jugabilidad y red, pruebas con varias pestañas o el servidor encendido mucho rato, pruebas repetidas o largas, instalar dependencias o clonar, empaquetar, cambios grandes y fusionar en `main`. En caso de duda, pregunta. Lista completa en `CLAUDE.md`, al principio.
 - Todo en castellano. Nombres de código en inglés.
 - No salgas del stack: Node.js, Express, Socket.IO y cliente sin framework. Nada nuevo sin permiso.
 - **Antes de hacer nada nuevo, ponte al día con el repositorio:** `git fetch --all`, `git pull` en `main`, y revisa `git log`, el diario y las ramas y pull requests del otro coautor **buscando lo que puedas aprovechar**. Si alguien está haciendo lo mismo que te piden, avisa antes de empezar. Vuelve a leer `CLAUDE.md` después del pull, por si ha cambiado.

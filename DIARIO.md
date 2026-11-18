@@ -8,7 +8,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 12, 18-11-2026.*
+*Última actualización: sesión 13, 18-11-2026.*
 
 ## Estado actual
 
@@ -37,6 +37,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 10 | 18-11 | Icono en la pestaña del navegador | La bomba como favicon (SVG e ICO); no se veía porque Render solo publica `main` y no se había fusionado nada |
 | 11 | 18-11 | Fusionar en `main` con normas | Lista de comprobaciones decidida por el alumno con un test; el agente fusiona solo tras el «sí» |
 | 12 | 18-11 | Lluvia de ideas y reparto de tareas | La IA propuso ~30 mejoras; el alumno las aprobó todas y repartió: Adriana estética y usabilidad, Aleix jugabilidad |
+| 13 | 18-11 | El ordenador de Adriana no aguanta tareas pesadas | Su agente solo hace tareas ligeras (`view-`, docs) sin preguntar; para las pesadas le pregunta antes |
 
 ## 1. Herramientas de IA
 
@@ -646,3 +647,35 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Pendiente de investigar por el alumno:** qué es `prefers-reduced-motion` y por qué importa para la accesibilidad; cómo se programa un bot sencillo (moverse hacia un objetivo o huir de él) en un servidor autoritativo.
 
 **Siguiente paso:** Aleix empieza por los bots (`game-bots`); Adriana, por que los jugadores se distingan mejor (`view-jugadores-visibles`). Avisar a Adriana de este reparto y de que haga `git pull`.
+
+---
+
+## Sesión 13 — 2026-11-18 — Tareas ligeras para el ordenador de Adriana
+
+**Autor:** Aleix.
+**Herramienta:** Claude en la aplicación de escritorio, modelo `claude-opus-5-5`. Misma conversación que las sesiones 5 y 9.
+
+**Qué se pidió:** «Modifica los agentes para especificar que Adriana no podrá hacer tareas pesadas por el equipo que tiene, es decir, para hacer views okey, hacer tareas más pesadas no; si va a hacer tareas más pesadas, preguntar a Adriana».
+
+**Qué se hizo:**
+
+- **`CLAUDE.md`**, al principio (junto a «Equipo»): tabla de tareas ligeras (se hacen sin preguntar) y pesadas (se pregunta a Adriana antes), la frase con la que preguntar y qué hacer si dice que no. En la sección 8, el reparto recuerda que a Adriana solo se le dan tareas ligeras.
+- **`AGENTS.md`**: la norma resumida como primer punto de «Lo imprescindible», porque es lo que lee el Codex de Adriana.
+- Rama `docs-equipo-adriana`, que sale de `docs-reparto-ideas` (sesión 12, sin fusionar todavía y con el reparto de tareas que esta norma completa). Fusionar después de ella.
+
+**Decisiones y por qué:**
+
+- **Qué cuenta como «pesado» lo concretó la IA**, porque el alumno solo dio el ejemplo de las vistas: todo lo que carga el ordenador (varias pestañas o el servidor encendido mucho rato, pruebas repetidas, instalar dependencias, clonar, empaquetar) y lo que sale de lo visual (servidor, jugabilidad, red, cambios grandes, fusionar en `main`, que exige la prueba con dos jugadores). En caso de duda, se pregunta.
+- **Se pregunta en vez de prohibir**, como pidió el alumno: Adriana decide si la hace igualmente o se la pasa a Aleix.
+- **De su lista de la sesión 12, una tarea es en parte pesada:** las estadísticas del final necesitan que el servidor cuente datos. Su agente hará la parte visual y preguntará antes de tocar `server/`. El resto de su lista es `view-`.
+- `FUSION.md` no se ha tocado: la norma de `CLAUDE.md` ya dice que fusionar es pesado para Adriana, y `FUSION.md` solo se cambia si se pide.
+
+**Qué falló y cómo se arregló:**
+
+- Al empezar, la revisión del repositorio encontró tres sesiones nuevas (10 a 12), `main` ya con fusiones y la rama `docs-reparto-ideas`; se leyó todo antes de editar y se partió de esa rama.
+- **El diario no llegó a tiempo al disco del portátil** y el primer commit salió sin él (solo `CLAUDE.md` y `AGENTS.md`). La comprobación de la sección 6.2 (comparar el archivo del disco antes del commit) lo detectó; se volvió a copiar y se añadió al mismo commit antes de subir nada. Es el mismo tipo de fallo que el de la sesión 3.
+- `git fetch` sigue sin funcionar desde el entorno de Claude: solo se ha visto lo que hay en el portátil de Aleix.
+
+**Pendiente de investigar por el alumno:** qué hace que una tarea sea pesada para un ordenador (memoria, procesador, varias pestañas del navegador, un servidor encendido).
+
+**Siguiente paso:** avisar a Adriana de la norma y de que haga `git pull` cuando se fusione; seguir con el reparto de la sesión 12.

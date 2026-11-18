@@ -2,7 +2,22 @@
 
 Este archivo lo debe leer cualquier agente de IA antes de tocar el proyecto (Claude, Codex, ChatGPT u otro; `AGENTS.md` remite aquí). Las normas son obligatorias. Si una petición del usuario choca con ellas, avisa y pregunta antes de seguir.
 
-**Equipo.** El proyecto es de dos coautores: **Aleix**, que trabaja con Claude, y **Adriana**, que trabaja con Codex/ChatGPT. Los dos pueden pedir cambios. Al empezar, si no sabes con quién hablas, pregúntalo: hace falta para el campo «Autor» del diario.
+**Equipo.** El proyecto es de dos coautores: **Aleix**, que trabaja con Claude, y **Adriana**, que trabaja con Codex/ChatGPT. Los dos pueden pedir cambios. Al empezar, si no sabes con quién hablas, pregúntalo: hace falta para el campo «Autor» del diario y para saber si se aplica la norma siguiente.
+
+**El ordenador de Adriana no aguanta tareas pesadas.** Cuando trabajas para Adriana (o repartes tareas para ella):
+
+| Sí, sin preguntar (ligeras) | Antes, pregúntale a Adriana (pesadas) |
+|---|---|
+| Ramas `view-`: CSS, HTML, dibujos del canvas en `public/js/game.js`, textos en `i18n.js` | Cambios en el servidor (`server/`), reglas del juego o red (`game-`, `net-`) |
+| Documentación (`docs-`) | Probar en el navegador con varias pestañas o jugadores a la vez, o dejar el servidor encendido mucho rato |
+| Un `npm test` antes de subir | Ejecutar las pruebas una y otra vez, simulaciones largas o con bots |
+| Una comprobación rápida en el navegador con una sola pestaña | Instalar dependencias (`npm install`, `probar.bat`), clonar el repositorio otra vez, empaquetar el `.exe` |
+| | Cambios grandes que tocan muchos archivos, y fusionar en `main` (pide la prueba con dos jugadores de `FUSION.md`) |
+
+- La pregunta, antes de empezar y con una frase de por qué es pesada: «Esto es una tarea pesada para tu ordenador (…). ¿La hago igualmente o se la pasamos a Aleix?». Si dice que no, apúntalo en el diario como tarea para Aleix.
+- En caso de duda, es pesada: pregunta.
+- Si una tarea `view-` necesita algo del servidor (por ejemplo, contar estadísticas), haz solo la parte visual y pregunta antes de tocar `server/`.
+- Esta norma no afecta a Aleix: su portátil sirve de servidor y aguanta las tareas pesadas.
 
 **Fecha de entrega:** hacia el 2 de diciembre de 2026 (unas dos semanas desde el 18-11). Lo que no sea necesario para entregar va detrás.
 
@@ -286,7 +301,7 @@ Es lo primero que ve quien abre el repositorio en GitHub (el profesorado incluid
    - Pendiente: una partida real con otra persona desde otro PC (ahora basta con abrir la web de Render). `start.bat` y el túnel quedan como plan B, sin probar.
 5. Presentación: completar el resumen del `DIARIO.md` y preparar la exposición (entrega hacia el 2-12-2026).
 
-**Reparto de las próximas sesiones (sesión 12):** Adriana se encarga de estética y usabilidad (ramas `view-`) y Aleix de jugabilidad (ramas `game-`). La lista de tareas de cada uno está en `DIARIO.md`, sesión 12: al empezar, mira la tuya y marca lo que termines en la entrada de tu sesión.
+**Reparto de las próximas sesiones (sesión 12):** Adriana se encarga de estética y usabilidad (ramas `view-`) y Aleix de jugabilidad (ramas `game-`). La lista de tareas de cada uno está en `DIARIO.md`, sesión 12: al empezar, mira la tuya y marca lo que termines en la entrada de tu sesión. A Adriana solo se le reparten tareas ligeras (ver «El ordenador de Adriana», al principio de este archivo).
 
 Ideas sin decidir (no las empieces sin que el usuario lo pida y concrete):
 
