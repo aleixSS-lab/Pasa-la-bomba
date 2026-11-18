@@ -8,7 +8,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 13, 18-11-2026.*
+*Última actualización: sesión 14, 18-11-2026.*
 
 ## Estado actual
 
@@ -38,6 +38,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 11 | 18-11 | Fusionar en `main` con normas | Lista de comprobaciones decidida por el alumno con un test; el agente fusiona solo tras el «sí» |
 | 12 | 18-11 | Lluvia de ideas y reparto de tareas | La IA propuso ~30 mejoras; el alumno las aprobó todas y repartió: Adriana estética y usabilidad, Aleix jugabilidad |
 | 13 | 18-11 | El ordenador de Adriana no aguanta tareas pesadas | Su agente solo hace tareas ligeras (`view-`, docs) sin preguntar; para las pesadas le pregunta antes |
+| 14 | 18-11 | Ramas «behind» en GitHub | Las fusionadas se dejan como foto; la tarea de Windows pone al día sola las ramas sin fusionar que se quedan atrás |
 
 ## 1. Herramientas de IA
 
@@ -67,6 +68,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Que los agentes suban todo sin tener que darle clic a un .bat» | El agente pregunta y, con el sí, deja una marca que una tarea de Windows convierte en `git push`; GitHub Actions abre el pull request |
 | «Haz un nuevo documento que haga el rol de normas… verificar un número x de cosas que podemos establecer tú y yo mediante un test» | `FUSION.md`: qué comprobar antes y después de fusionar en `main`, decidido con preguntas tipo test |
 | «Mira a ver si nos vendría bien Vercel y Supabase» | La IA leyó su documentación y los descartó; propuso Render, que no obliga a cambiar el código |
+| «Las demás ramas tienen commits behind, arréglalo y si es mejor crear otra función para arreglarse automáticamente hazlo» | La IA vio que «behind» en una rama ya fusionada no es un fallo y preguntó; se automatizó solo lo útil: poner al día las ramas sin fusionar |
 | «Vamos a hacer una lluvia de ideas para añadir funciones y mejoras» | Lista de mejoras por temas con esfuerzo y rama; el alumno la convirtió en el plan de trabajo de las dos últimas semanas |
 | «Antes de hacer nada, que lean el repositorio» y «si hay una rama que puedan aprovechar, que salgan de ella» | Varias conversaciones y dos agentes a la vez sin pisarse: cada uno lee lo nuevo y construye encima |
 
@@ -679,3 +681,41 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Pendiente de investigar por el alumno:** qué hace que una tarea sea pesada para un ordenador (memoria, procesador, varias pestañas del navegador, un servidor encendido).
 
 **Siguiente paso:** avisar a Adriana de la norma y de que haga `git pull` cuando se fusione; seguir con el reparto de la sesión 12.
+
+---
+
+## Sesión 14 — 2026-11-18 — Ramas «behind» en GitHub y puesta al día automática
+
+**Autor:** Aleix.
+**Herramienta:** Claude en la aplicación de escritorio, modelo `claude-opus-5-5`. Misma conversación que la sesión 12; la entrada va aparte porque entre medias se escribió la sesión 13 en otra conversación.
+
+**Qué se pidió:**
+
+1. «Fusiona» (la rama `docs-reparto-ideas` de la sesión 12). Hecho con `.fusionar-main`: el log dice «Fusionada docs-reparto-ideas en main (95a18a5)».
+2. «Las demás ramas tienen commits behind, arréglalo y si es mejor crear otra función para arreglarse automáticamente hazlo».
+
+**Qué se hizo:**
+
+- La IA revisó las 7 ramas antiguas que GitHub marca como *behind*: todas tenían **0 commits que no estuvieran en `main`**, es decir, ya estaban fusionadas enteras. El aviso solo dice que `main` ha avanzado después.
+- La IA preguntó con un test qué hacer, porque avanzarlas hasta `main` chocaba con una norma de `CLAUDE.md` (no meter commits de otro tema en una rama). El alumno eligió **dejar las fusionadas como están y automatizar el caso que sí importa**.
+- `autosubida.ps1`, función nueva `Update-Branches`: en cada vuelta con petición (`.subir-ahora` o `.fusionar-main`), pone al día con `main` las ramas **sin fusionar** que se han quedado atrás. Calcula la fusión con `git merge-tree`, crea un commit «Pone al día `<rama>` con main (automático)» y lo sube como avance normal, sin forzar y sin cambiar de rama en el portátil.
+- No toca: ramas ya fusionadas, ramas con commits sin subir, la rama abierta en el portátil (la pone al día el agente) ni las que chocan con `main` (aviso en el log para resolverlo con el usuario).
+- `CLAUDE.md` (secciones 5 y 6.3) y `README.md` actualizados.
+
+**Decisiones y por qué:**
+
+- **No «arreglar» las ramas fusionadas** (propuesta de la IA, elegida por el alumno): si se avanzan hasta `main`, cada rama pasa a contener el trabajo de las demás y se pierde la foto de qué se hizo en cada una, que es lo que se quería enseñar en la presentación.
+- **`git merge-tree` en vez de `git checkout` + `git merge`** (decisión de la IA): la tarea de Windows se ejecuta mientras los alumnos y los agentes trabajan en la carpeta; cambiar de rama por debajo les movería los archivos. Con `merge-tree` la fusión se calcula sin tocar la carpeta.
+- **Commit de fusión y no *rebase***: no se reescribe nada que ya esté en GitHub (norma de la sesión 5).
+- La rama `net-ramas-al-dia` sale de `docs-equipo-adriana` (sesión 13, sin fusionar todavía), porque las dos tocan `CLAUDE.md` y el diario. Hay que fusionarla después de esa.
+- La IA trabajó en una copia aparte de la rama (*git worktree*) en vez de cambiar de rama en la carpeta, porque otra conversación estaba trabajando en ella a la vez.
+
+**Qué falló y cómo se arregló:**
+
+- **El aviso de GitHub se había leído como un fallo y no lo era.** La IA lo comprobó antes de tocar nada.
+- **No se ha podido probar el script en PowerShell:** el entorno de la IA no tiene PowerShell esta vez (sin red para instalarlo). Se probó la misma secuencia de comandos git en bash contra un «GitHub» falso, en cinco casos: rama fusionada (no la toca), rama sin fusionar atrasada (la pone al día y la sube sin forzar), rama que choca con `main` (aviso), rama abierta (aviso) y rama con commits sin subir (no la toca). Todo correcto. **La primera prueba real será en Windows** con la próxima subida.
+- `git merge-tree --write-tree` necesita git 2.38 o más nuevo. No se ha podido ver qué versión tiene el Windows de Aleix; si es más vieja, el script lo dice en el log y no hace nada.
+
+**Pendiente de investigar por el alumno:** qué significa *ahead* y *behind* en una rama; qué es un commit de fusión con dos padres; qué es un *git worktree*.
+
+**Siguiente paso:** comprobar en `autosubida.log`, tras la próxima subida, que aparece «Puesta al día…» o un AVISO entendible; fusionar `docs-equipo-adriana` y después `net-ramas-al-dia`.

@@ -127,7 +127,7 @@ DevChallenge3/
 ├── start.bat              arranca servidor + túnel y muestra la URL
 ├── probar.bat             instala dependencias, ejecuta la prueba y guarda prueba.log (ignorado por git)
 ├── subir.bat              sube a GitHub la rama actual con doble clic (local, ignorado por git; ahora es el plan B)
-├── autosubida.ps1         sube las ramas con commits nuevos cuando existe .subir-ahora, y avanza main hasta una rama cuando existe .fusionar-main
+├── autosubida.ps1         sube las ramas con commits nuevos cuando existe .subir-ahora, y avanza main hasta una rama cuando existe .fusionar-main; en cada vuelta pone al día con main las ramas sin fusionar que se han quedado atrás
 ├── autosubida.vbs         lo lanza la tarea programada cada minuto, sin abrir ventanas
 ├── instalar-autosubida.bat / quitar-autosubida.bat   crean o quitan la tarea programada en el Windows de cada coautor
 ├── .github/workflows/abrir-pull-request.yml   abre solo el pull request a main al subir una rama
@@ -240,7 +240,8 @@ Si algo no se ha podido probar, dilo claramente al usuario y anótalo en el diar
      - Comprueba el resultado: el archivo `.subir-ahora` desaparece y `autosubida.log` dice «Subida <rama>». Si en dos minutos sigue ahí, la tarea no está instalada en ese ordenador: díselo al usuario y ofrécele instalarla con doble clic en `instalar-autosubida.bat` (una sola vez por ordenador) o usar `subir.bat`.
   4. Al llegar la rama a GitHub, **GitHub Actions abre el pull request a `main`** (`.github/workflows/abrir-pull-request.yml`), con la primera línea del último commit como título.
   5. **Fusionar en `main` sigue [`FUSION.md`](FUSION.md):** cuatro comprobaciones antes, el «sí» de quien está con el agente, avance de `main` sin forzar y tres comprobaciones después. Sin eso, nunca se fusiona.
-  6. Las ramas **no se borran** después de fusionarlas: sirven para la presentación.
+  6. Las ramas **no se borran** después de fusionarlas: sirven para la presentación. Que GitHub diga que una rama ya fusionada va «N commits behind» es normal (solo significa que `main` ha avanzado después) y **no se arregla**: la rama se queda como foto de lo que se hizo en ella.
+  7. **Ramas sin fusionar que se quedan atrás.** Si `main` avanza (por ejemplo, el otro coautor fusiona algo), `autosubida.ps1` pone al día con `main` las ramas sin fusionar en cada vuelta con petición: crea un commit «Pone al día `<rama>` con main (automático)» y lo sube sin forzar, sin cambiar de rama en el portátil. No toca la rama abierta en el portátil, las que tienen commits sin subir ni las que chocan con `main`: lo apunta en `autosubida.log` como AVISO. Esas las pone al día el agente con `git merge origin/main` dentro de la rama, y los conflictos se resuelven con el usuario.
 - Nunca crees `.subir-ahora` sin el «sí» del usuario en esa misma conversación, y nunca hagas commit en `main`.
 - Si `autosubida.log` dice AVISO o ERROR, explícaselo al alumno. Si tienes forma, confirma también con `git ls-remote` que el commit está en GitHub.
 - Plan B si la tarea no está instalada o falla: `subir.bat`, que el agente puede lanzar con un doble clic si el alumno le da acceso al Explorador de archivos. Si no se abre el pull request automático, dale al alumno el título y una descripción de dos o tres líneas para pegarlos en GitHub.

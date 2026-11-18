@@ -5,6 +5,8 @@
 # La tarea programada que crea instalar-autosubida.bat lo comprueba cada minuto,
 # con la sesión de GitHub del usuario de Windows (la misma que usa subir.bat).
 # La subida de ramas nunca toca main; main solo avanza con .fusionar-main. Nunca se fuerza nada.
+# En cada vuelta con petición, además, pone al día con main las ramas sin fusionar que se
+# han quedado atrás (Update-Branches).
 
 Set-Location -LiteralPath $PSScriptRoot
 $env:GIT_TERMINAL_PROMPT = '0'   # sin ventanas pidiendo contraseña: si falla, se apunta en el log
@@ -97,6 +99,55 @@ function Merge-IntoMain {
     Write-Log "Fusionada ${branch} en main ($($local.Substring(0, 7)))"
 }
 
+# Pone al día con main las ramas que AÚN NO están fusionadas y se han quedado atrás porque
+# main ha avanzado (por ejemplo, el otro coautor fusionó algo). Lo hace sin cambiar de rama
+# en el portátil: calcula la fusión con «git merge-tree», crea el commit de fusión
+# («Pone al día <rama> con main») y lo sube como un avance normal, nunca forzado.
+# No toca: las ramas ya fusionadas (se quedan como foto para la presentación), las que tienen
+# commits sin subir, la rama abierta en el portátil (la pone al día el agente) ni las que
+# chocarían con main (se avisa en el log para resolverlo con el usuario).
+function Update-Branches {
+    git fetch --quiet origin
+    if ($LASTEXITCODE -ne 0) { Write-Log 'AVISO puesta al día: no se ha podido conectar con GitHub (git fetch).'; return }
+    $main = git rev-parse --verify --quiet 'refs/remotes/origin/main'
+    if (-not $main) { return }
+    $current = git rev-parse --abbrev-ref HEAD
+
+    foreach ($branch in (git for-each-ref --format='%(refname:short)' refs/heads)) {
+        if ($branch -eq 'main') { continue }
+        $local = git rev-parse "refs/heads/$branch"
+        $remote = git rev-parse --verify --quiet "refs/remotes/origin/$branch"
+        if (-not $remote -or $remote -ne $local) { continue }        # sin subir o con cambios pendientes
+        if ([int](git rev-list --count "${main}..${local}") -eq 0) { continue }   # ya fusionada en main
+        if ([int](git rev-list --count "${local}..${main}") -eq 0) { continue }   # ya al día
+        if ($branch -eq $current) {
+            Write-Log "AVISO ${branch}: está atrasada respecto a main, pero es la rama abierta en el portátil. La pone al día el agente (git merge origin/main)."
+            continue
+        }
+
+        $out = @(git merge-tree --write-tree $local $main 2>$null)
+        $code = $LASTEXITCODE
+        $tree = if ($out.Count -gt 0) { $out[0] } else { $null }
+        if ($code -eq 1) {
+            Write-Log "AVISO ${branch}: choca con main (conflicto). No se toca; hay que resolverlo con el usuario."
+            continue
+        }
+        if ($code -ne 0 -or -not $tree) {
+            Write-Log 'AVISO puesta al día: este git no sabe hacer «merge-tree --write-tree» (hace falta git 2.38 o más nuevo). No se pone al día ninguna rama.'
+            return
+        }
+
+        $commit = git commit-tree $tree -p $local -p $main -m "Pone al día $branch con main (automático)"
+        if ($LASTEXITCODE -ne 0 -or -not $commit) { Write-Log "ERROR al poner al día ${branch}: no se ha podido crear el commit."; continue }
+        $output = (git push origin "${commit}:refs/heads/$branch" 2>&1 | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0) { Write-Log "ERROR al poner al día ${branch}: $output"; continue }
+        git update-ref "refs/heads/$branch" $commit $local
+        git fetch --quiet origin
+        Write-Log "Puesta al día ${branch} con main ($($commit.Substring(0, 7)))"
+    }
+}
+
 if (Test-Path -LiteralPath $request) { Push-Branches }
 if (Test-Path -LiteralPath $mergeRequest) { Merge-IntoMain }
+Update-Branches
 Write-Log 'Fin.'
