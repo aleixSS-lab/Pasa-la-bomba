@@ -15,4 +15,6 @@ Lo imprescindible:
 - **Al terminar cada tarea, actualiza la documentación** en la misma rama: siempre la entrada y el resumen de `DIARIO.md`; `README.md`, `CLAUDE.md` o este archivo si lo que has cambiado les afecta (`CLAUDE.md` 0 bis).
 - Antes de commit y push: `npm test` y una entrada nueva al final de `DIARIO.md` con **Autor: Adriana** (o quien corresponda) y **Herramienta:** el agente y el modelo usados.
 - **Pregunta antes de subir:** «¿Subo los cambios a GitHub?». Con el «sí», haz `git push -u origin <rama>`; si tu entorno no puede, crea el archivo vacío `.subir-ahora` en la raíz y la tarea programada de Windows lo sube en un minuto (`CLAUDE.md` 6.3; se instala una vez por ordenador con `instalar-autosubida.bat`). El pull request a `main` lo abre GitHub Actions al llegar la rama. Lo fusiona el otro coautor; las ramas no se borran.
+- **Cada petición distinta, en su propia rama** (un documento nuevo, `docs-`; un cambio visual, `view-`...), y cada rama se sube al terminarla.
+- **Para fusionar en `main`, sigue [`FUSION.md`](FUSION.md):** cuatro comprobaciones antes (`npm test`, navegador, documentación, sin conflictos), el «sí» de quien está contigo, `git push origin <rama>:main` sin forzar, y tres comprobaciones después (GitHub, web de Render, avisar al otro coautor).
 - Si encuentras un fallo que no te han pedido arreglar, avisa y pregunta.

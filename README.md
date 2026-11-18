@@ -118,6 +118,7 @@ test/     smoke.js (prueba automática)
 | [DIARIO.md](DIARIO.md) | Diario de desarrollo con IA: herramientas, prompts, decisiones y fallos. Material de la presentación. |
 | [CLAUDE.md](CLAUDE.md) | Normas que sigue cualquier agente de IA que trabaje en el proyecto. |
 | [AGENTS.md](AGENTS.md) | Entrada para Codex y otros agentes; remite a `CLAUDE.md`. |
+| [FUSION.md](FUSION.md) | Qué se comprueba antes y después de fusionar un cambio en `main` (lo que se publica). |
 
 ## Autores
 

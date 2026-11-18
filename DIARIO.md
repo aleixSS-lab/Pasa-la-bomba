@@ -568,6 +568,15 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Un mensaje de error decía que la rama `main` «no existe» cuando lo que pasa es que no se puede fusionar `main` en sí misma; se corrigió el texto.
 - La prueba se hizo en el entorno Linux de la IA; la primera fusión real en Windows será la prueba de verdad.
 
+**Qué se hizo (rama `docs-normas-fusion`, el documento):**
+
+- **`FUSION.md`, documento nuevo con las normas para fusionar en `main`:** cuándo y con el «sí» de quién, la pregunta exacta que hace el agente con el resultado de las comprobaciones, las cuatro comprobaciones de antes con el comando para cada una, cómo se fusiona (con `git push` o con la marca `.fusionar-main`), las tres comprobaciones de después y qué hacer si algo sale mal.
+- `CLAUDE.md`: `FUSION.md` en la estructura y en la tabla de documentación; el paso 5 del flujo de ramas remite a `FUSION.md` en vez de «lo fusiona el otro coautor»; y la norma de **una rama por petición** queda escrita con ejemplos (petición 2).
+- `AGENTS.md` y `README.md`: lo mismo, resumido.
+- La rama sale de `net-fusion-main`, porque describe ese mecanismo.
+
+**Corrección a la sesión 5:** allí se decidió que «el otro coautor revisa y fusiona; el agente nunca fusiona». Desde esta sesión basta el «sí» de quien está con el agente, siempre con las comprobaciones de `FUSION.md`. Lo decidió el alumno en el test.
+
 **Pendiente de investigar por el alumno:** qué es una fusión *fast-forward* y en qué se diferencia de un *merge commit*.
 
 **Siguiente paso:** escribir `FUSION.md` en la rama `docs-normas-fusion` y hacer la primera fusión siguiendo sus normas.

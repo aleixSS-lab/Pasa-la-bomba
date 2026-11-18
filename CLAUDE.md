@@ -30,6 +30,7 @@ Una tarea no está acabada hasta que la documentación dice lo mismo que el cód
 | `README.md` | Si cambia cómo se arranca o se publica, las reglas, los controles, la API o la URL | Lo que vería alguien que llega al repositorio (sección 7 bis). |
 | `CLAUDE.md` | Si cambian normas, estructura de archivos, eventos, endpoints, valores de `config.js`, el stack, las fases o descubres una limitación nueva | La sección correspondiente. En las fases, marca lo hecho y añade los pendientes nuevos. |
 | `AGENTS.md` | Si cambia algo de lo que hay en su lista «Lo imprescindible» | Que Codex se entere sin tener que leerlo todo. |
+| `FUSION.md` | Solo si el usuario pide cambiar las normas de fusión | Las comprobaciones y el procedimiento. |
 
 Al acabar, dile al usuario en una línea qué documentos has actualizado. Si alguno no se ha podido actualizar, dilo.
 
@@ -104,6 +105,7 @@ Está prohibido añadir cualquier otra librería, framework, bundler o servicio 
 DevChallenge3/
 ├── README.md              presentación del juego y cómo arrancarlo (para quien llega al repositorio)
 ├── CLAUDE.md              normas para los agentes de IA (este archivo)
+├── FUSION.md              normas para fusionar en main: comprobaciones antes y después
 ├── AGENTS.md              entrada para Codex y otros agentes; remite a CLAUDE.md
 ├── DIARIO.md              diario de desarrollo con IA (material de la presentación)
 ├── package.json
@@ -196,7 +198,7 @@ Si algo no se ha podido probar, dilo claramente al usuario y anótalo en el diar
 - Autor de los commits: la dirección anónima de GitHub del alumno (`…@users.noreply.github.com`). Nunca su correo personal: el repositorio es público.
 - No reescribas el historial de nada que ya esté subido.
 
-**Una rama por cada cosa nueva.** Nunca se trabaja directamente en `main`.
+**Una rama por cada cosa nueva.** Nunca se trabaja directamente en `main`. Cada petición del usuario que sea otra cosa va en **su propia rama con su prefijo**, aunque sea en la misma conversación: un documento nuevo, en una rama `docs-`; un cambio visual, en una `view-`; y así con todo. Cada rama se sube al terminarla (con el «sí»). No añadas commits de otro tema a una rama que ya existe.
 
 | Prefijo | Para qué | Ejemplo |
 |---|---|---|
@@ -221,8 +223,9 @@ Si algo no se ha podido probar, dilo claramente al usuario y anótalo en el diar
      - Si no puede (Claude en Cowork: su red no llega a GitHub), **crea un archivo vacío `.subir-ahora` en la raíz del proyecto**. La tarea programada `PasaLaBomba-autosubida` del Windows de ese coautor lo ve en menos de un minuto, sube las ramas con commits nuevos (nunca `main`, nunca forzado) con su sesión de GitHub y borra el archivo.
      - (`.fusionar-main` es otra cosa: fusiona una rama en `main`. Solo con las comprobaciones y el «sí» que pide `FUSION.md`.)
      - Comprueba el resultado: el archivo `.subir-ahora` desaparece y `autosubida.log` dice «Subida <rama>». Si en dos minutos sigue ahí, la tarea no está instalada en ese ordenador: díselo al usuario y ofrécele instalarla con doble clic en `instalar-autosubida.bat` (una sola vez por ordenador) o usar `subir.bat`.
-  4. Al llegar la rama a GitHub, **GitHub Actions abre el pull request a `main`** (`.github/workflows/abrir-pull-request.yml`), con la primera línea del último commit como título. El otro coautor lo revisa y lo fusiona. El agente nunca fusiona en `main` por su cuenta.
-  5. Las ramas **no se borran** después de fusionarlas: sirven para la presentación.
+  4. Al llegar la rama a GitHub, **GitHub Actions abre el pull request a `main`** (`.github/workflows/abrir-pull-request.yml`), con la primera línea del último commit como título.
+  5. **Fusionar en `main` sigue [`FUSION.md`](FUSION.md):** cuatro comprobaciones antes, el «sí» de quien está con el agente, avance de `main` sin forzar y tres comprobaciones después. Sin eso, nunca se fusiona.
+  6. Las ramas **no se borran** después de fusionarlas: sirven para la presentación.
 - Nunca crees `.subir-ahora` sin el «sí» del usuario en esa misma conversación, y nunca hagas commit en `main`.
 - Si `autosubida.log` dice AVISO o ERROR, explícaselo al alumno. Si tienes forma, confirma también con `git ls-remote` que el commit está en GitHub.
 - Plan B si la tarea no está instalada o falla: `subir.bat`, que el agente puede lanzar con un doble clic si el alumno le da acceso al Explorador de archivos. Si no se abre el pull request automático, dale al alumno el título y una descripción de dos o tres líneas para pegarlos en GitHub.
