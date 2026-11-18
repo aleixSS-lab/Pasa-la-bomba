@@ -279,6 +279,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 1. «Vamos a mejorar las instrucciones, tanto claude.md, diario.md y el readme.md».
 2. «Hazme las preguntas para mejorar la precisión de los próximos modelos».
 3. «Por cada cosa nueva me gustaría que se hiciera una rama nueva […] si es de aspecto visual sería view-…».
+4. «También añade que antes de hacer nada nuevo verifique cada agente el repositorio por si hay cosas nuevas y estar actualizados».
 
 **Qué se hizo:**
 
@@ -306,6 +307,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
   - Las ramas no se borran, para enseñar el historial en la presentación.
   - Los dos primeros commits de esta sesión ya estaban en `main` (el alumno los subió con `subir.bat`) y no se mueven, porque no se reescribe lo que ya está subido. Este último cambio es el primero que va en una rama: `docs-instrucciones`.
   - `subir.bat` ahora sube la rama actual en vez de `main` siempre.
+- **Cuarto prompt:** «Antes de hacer nada nuevo, que cada agente verifique el repositorio por si hay cosas nuevas y estar actualizados». Nuevo primer paso en `CLAUDE.md` y `AGENTS.md`: `git fetch`, `git pull`, revisar las ramas y los pull requests del otro coautor, y avisar si alguno toca lo mismo. Si el agente no llega a GitHub (es lo que le pasa a Claude), tiene que pedir al alumno que haga `git pull`, en vez de dar por hecho que está al día.
 
 **Decisiones y por qué:**
 

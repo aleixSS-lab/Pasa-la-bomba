@@ -8,10 +8,15 @@ Este archivo lo debe leer cualquier agente de IA antes de tocar el proyecto (Cla
 
 ## 0. Antes de empezar cualquier sesión
 
-1. Lee este archivo entero y el **resumen** y la **última entrada** de `DIARIO.md`, que dicen en qué punto está el proyecto y qué quedó pendiente.
-2. Ejecuta `git status`, `git branch -a` y `git log --oneline -5`. Si hay cambios sin commit de una sesión anterior, avisa al usuario antes de tocar nada. Después crea la rama de la tarea a partir de `main` actualizado (sección 6.3).
-3. Ejecuta `npm test` para partir de un estado que funciona. Si falla, díselo al usuario antes de empezar lo que te pida.
-4. Lee la sección 10 (limitaciones del entorno de la IA) para no prometer cosas que no puedes hacer.
+1. **Ponte al día con el repositorio antes de hacer nada nuevo.** Los dos coautores trabajan a la vez con agentes distintos, así que puede haber cambios que no conoces:
+   - `git fetch --all` y `git pull` en `main`.
+   - `git log --oneline main -10` y `git branch -a`: mira qué se ha fusionado y qué ramas nuevas hay del otro coautor.
+   - Si hay pull requests abiertos o ramas sin fusionar que tocan lo mismo que te piden, avisa al usuario antes de empezar, para no pisar el trabajo del otro.
+   - Si no puedes conectar con GitHub (sección 10), no supongas que estás al día: pide al alumno que haga `git pull` antes de seguir y díselo con esas palabras.
+2. Lee este archivo entero (puede haber cambiado con lo que acabas de traer) y el **resumen** y la **última entrada** de `DIARIO.md`, que dicen en qué punto está el proyecto y qué quedó pendiente.
+3. Ejecuta `git status`. Si hay cambios sin commit de una sesión anterior, avisa al usuario antes de tocar nada. Después crea la rama de la tarea a partir de `main` actualizado (sección 6.3).
+4. Ejecuta `npm test` para partir de un estado que funciona. Si falla, díselo al usuario antes de empezar lo que te pida.
+5. Lee la sección 10 (limitaciones del entorno de la IA) para no prometer cosas que no puedes hacer.
 
 ## 1. Qué es el proyecto
 
