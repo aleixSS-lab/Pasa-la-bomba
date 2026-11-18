@@ -8,13 +8,14 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 6, 18-11-2026.*
+*Última actualización: sesión 7, 18-11-2026.*
 
 ## Estado actual
 
+- **Publicado:** https://pasa-la-bomba-0db0.onrender.com (Render, gratis). Se actualiza solo con cada fusión en `main`.
 - **Funciona:** salas con código, sala de espera con máster, mapa aleatorio, bomba, gadgets, eliminación, resultados, endpoint `GET /api/games/:id`, prueba automática (`npm test`) superada en Windows con las librerías reales.
 - **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
-- **Sin probar:** `start.bat` con el túnel de Cloudflare, y una partida real entre personas en PC distintos.
+- **Sin probar:** una partida real entre personas en PC distintos (ya basta con la web de Render). `start.bat` y el túnel quedan como plan B.
 - **Fase:** 4 de 5 (red real y ajuste jugando).
 - **Entrega:** hacia el 2-12-2026.
 - **Idea sin decidir:** versión `.exe` además de la web.
@@ -29,12 +30,14 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 4 | 18-11 | Iconos dibujados de gadgets y bomba | La IA rehízo la trampa de oso al ver que no se reconocía |
 | 5 | 18-11 | Mejora de `CLAUDE.md`, diario y `README.md` | Detectado el fallo perdido de la sesión 3 |
 | 6 | 18-11 | El Codex de Adriana no encontraba las dependencias | No era incompatibilidad: un clon nuevo no trae `node_modules/`; documentado en `AGENTS.md` |
+| 7 | 18-11 | Publicar el juego gratis en internet | Vercel y Supabase descartados tras leer su documentación; publicado en Render desde el Chrome del alumno |
 
 ## 1. Herramientas de IA
 
 - **Claude** (Anthropic) en la aplicación de escritorio, con acceso a la carpeta del proyecto. Modelo `claude-fable-5-2` en las sesiones 1 y 2, `claude-opus-5-5` desde la sesión 3.
 - **Codex / ChatGPT** (OpenAI), que usa Adriana. Desde la sesión 5 hay un `AGENTS.md` para que su agente siga las mismas normas.
 - Sesiones 1 a 5: Aleix con Claude, un único agente, sin subagentes.
+- **Claude in Chrome** (extensión del navegador) desde la sesión 7, para manejar Render en el Chrome del alumno. No funcionó en Opera GX.
 - `CLAUDE.md` hace de «contrato»: cualquier agente lo lee antes de tocar nada.
 
 ## 2. La idea y cómo se pidió
@@ -54,6 +57,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Cambia el objetivo… mejórame las ideas» | Pasa la bomba; la IA añadió velocidad extra, inmunidad, parada al recibir y espectadores |
 | «No deja acceder a Adriana a mi local» | Lección: probar la red desde otro PC |
 | «Que los emoticonos sean tal cual lo que son» | Dibujos en canvas en vez de emojis |
+| «Mira a ver si nos vendría bien Vercel y Supabase» | La IA leyó su documentación y los descartó; propuso Render, que no obliga a cambiar el código |
 
 ## 4. Qué tuvo que investigar el alumno
 
@@ -67,6 +71,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Detección de choques (distancia entre centros) y *flood fill* para el mapa.
 - Canvas 2D (`arc`, `lineTo`, `fill`) e imágenes `data:`.
 - Git: remoto, `commit` frente a `push`, ramas y pull requests.
+- Hosting: servidor persistente (Render) frente a funciones *serverless* (Vercel), y qué es un servicio *realtime* como Supabase.
 
 ## 5. Qué no funcionó a la primera
 
@@ -77,6 +82,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - **Bomba que se devolvía sin parar** → la IA añadió por su cuenta la parada de medio segundo al recibirla.
 - **Enlace de invitación con `localhost`** → arreglo en la sesión 3 que **no se guardó** en el servidor; detectado en la sesión 5.
 - **Trampa de oso irreconocible** → la IA lo vio en las capturas y la redibujó.
+- **El usuario pidió usar su Opera** → la extensión no funciona en Opera; se hizo desde Chrome.
 - **Lo que las pruebas automáticas no dicen:** si el juego es divertido o está equilibrado. Hace falta jugar con personas.
 
 ---
@@ -363,3 +369,45 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Pendiente de investigar por el alumno:** por qué `node_modules/` no se sube a git y qué hacen `package-lock.json` y `npm install`.
 
 **Siguiente paso:** Adriana ejecuta `probar.bat` en su clon y Codex continúa con los mapas y la selección de sala.
+
+---
+
+## Sesión 7 — 2026-11-18 — Publicar el juego gratis en internet: Render
+
+**Autor:** Aleix.
+**Herramienta:** Claude en modo Cowork, modelo configurado `claude-opus-5-5`, con búsqueda web, la extensión Claude in Chrome y el control del ordenador (solo para el Explorador de archivos). Esta sesión empezó antes que las sesiones 5 y 6, que se hicieron en otra conversación; las encontró en el repositorio al ir a guardar.
+
+**Qué se pidió:**
+
+1. «Mejoremos el juego, vamos a hacer que el juego se pueda correr en una página web gratis, por ejemplo Vercel o el mismo GitHub, mira a ver si nos vendría bien Vercel y Supabase».
+2. «Vamos con Render pues, utiliza el navegador para hacer todo, intenta acceder a mi Opera».
+3. «Ya he creado la cuenta, intenta acceder a mi Chrome».
+
+**Qué se hizo:**
+
+- Comparación de opciones gratuitas leyendo la documentación oficial de Vercel, Supabase y Render.
+- Web Service gratuito en Render (región Frankfurt), enlazado a GitHub con acceso solo al repositorio `pasa-la-bomba`. Publicado en **https://pasa-la-bomba-0db0.onrender.com**.
+- Prueba en la web publicada: dos jugadores en pestañas distintas crearon y se unieron a una sala y la partida arrancó (mapa, gadgets, cuenta atrás de la bomba).
+- `CLAUDE.md` (secciones 1, 2, 3, 8, 9 y 10), `README.md` («Jugar ahora») y este diario actualizados.
+
+**Decisiones y por qué:**
+
+- **Vercel descartado (lo propuso el alumno; lo descartó la IA tras leer la documentación):** el plan gratuito ya admite WebSockets, pero cada conexión se corta a los 5 minutos (una partida de 8 dura unos 4 más la sala de espera) y cada jugador puede caer en una instancia distinta del servidor, así que las salas en memoria no funcionarían sin añadir una base de datos.
+- **Supabase descartado:** sus canales en tiempo real podrían sustituir a Socket.IO, pero no ejecutan el bucle del juego. Habría que convertir el navegador del máster en servidor (reescribir medio proyecto, perder el servidor autoritativo) y su plan gratuito permite 100 mensajes por segundo, justo en el límite con 8 jugadores a 20 actualizaciones por segundo.
+- **GitHub Pages descartado:** solo sirve archivos, no ejecuta un servidor.
+- **Render elegido (propuesta de la IA, aceptada por el alumno):** ejecuta el mismo servidor sin cambios, una sola instancia, WebSockets sin límite de duración, gratis y, según su web, sin tarjeta. Pega: se duerme tras 15 minutos sin uso.
+- **Conectar GitHub a Render** lo decidió el alumno (la IA le preguntó antes, porque da permisos), para que cada fusión en `main` se publique sola. Se limitó el acceso a un solo repositorio.
+- **Rama `net-render` creada a partir de `docs-instrucciones` y no de `main`** (decisión de la IA): las dos añaden una sesión al final del diario y tocan el resumen, y partir de `main` habría provocado un conflicto seguro. Si `docs-instrucciones` se fusiona primero, este pull request solo mostrará lo de la sesión 7.
+
+**Qué falló y cómo se arregló:**
+
+- **La extensión de Claude no funciona en Opera GX:** cada intento de abrir una pestaña devolvía «No group with id». El control del ordenador tampoco deja hacer clic en navegadores. Se probó el navegador integrado de Claude, pero era un perfil sin sesiones y el alumno no llegó a iniciar sesión. Al final el alumno conectó **Chrome** y desde ahí funcionó.
+- **Render marca por defecto el plan de 7 $/mes.** La IA cambió a **Free** antes de publicar. Queda en `CLAUDE.md` como aviso.
+- **La autorización de GitHub se abrió en una ventana emergente** que el agente no puede ver; la completó el alumno.
+- **Al ir a guardar apareció trabajo de otra conversación** (sesiones 5 y 6, ramas nuevas y normas nuevas). Se leyó antes de tocar nada y se siguieron las normas nuevas (rama propia y pull request).
+- **Corrección a la sesión 3** (ya señalada en la sesión 5): esta misma conversación hizo aquel arreglo y lo dio por terminado sin comprobar que `server/index.js` aparecía en el commit. Por eso falta `/api/lan` en el servidor. En la web de Render no afecta, porque el enlace de invitación usa la dirección pública; sí afecta al plan B en el portátil. No se ha arreglado en esta sesión: se ha preguntado al alumno, como pide la norma de fallos fuera de la petición.
+- No se pudo comprobar la web con `curl` desde el entorno de la IA (su proxy no llega a Render); se comprobó con el navegador.
+
+**Pendiente de investigar por el alumno:** diferencia entre un servidor que está siempre encendido (Render) y las funciones *serverless* (Vercel); qué es un servicio *realtime* como Supabase; qué es un despliegue automático desde GitHub.
+
+**Siguiente paso:** fusionar `docs-instrucciones` y `net-render` en `main`; arreglar `/api/lan` si el alumno lo pide; jugar una partida real con Adriana desde la web de Render.

@@ -35,8 +35,8 @@ La primera versión del juego era de recoger monedas (Coin Rush); se cambió por
 
 Alcance, que manda sobre todo lo demás:
 
-- Es un **miniproyecto de clase**. No se va a publicar ni a mantener. Ante la duda, elige siempre la solución más simple que cumpla el enunciado.
-- **Coste cero.** Nada de servicios de pago, cuentas con tarjeta ni hosting. Solo software libre y el portátil del alumno.
+- Es un **miniproyecto de clase**. Está publicado para poder jugarlo y presentarlo, pero no se va a mantener después de la entrega. Ante la duda, elige siempre la solución más simple que cumpla el enunciado.
+- **Coste cero.** Nada de servicios de pago ni de cuentas con tarjeta. El único servicio externo es el plan gratuito de Render (sección 2); en Render, comprueba siempre que el plan elegido sea **Free** ($0), porque por defecto sale marcado uno de pago.
 - No añadas funciones que el enunciado no pide (cuentas de usuario, base de datos, chat, niveles, sonido...) salvo que el usuario lo pida.
 
 La actividad evalúa dos cosas con el mismo peso:
@@ -54,12 +54,16 @@ Requisitos del enunciado que no se pueden perder:
 
 ## 2. Entorno de ejecución
 
-- Todo corre en un único portátil con Windows (x64, Ryzen 7 7435HS), que hace de servidor.
-- Un solo proceso Node.js (versión 18 o superior) sirve la web, gestiona las salas por WebSocket y expone la API REST. Puerto 3000.
-- Los jugadores se conectan por internet a través de un túnel rápido y gratuito de Cloudflare (`cloudflared`, sin cuenta), desde el navegador de otros PC. No instalan nada.
-- La URL del túnel cambia en cada arranque: nunca escribas una URL fija en el código. El cliente usa siempre rutas relativas y `window.location`.
-- El mismo servidor tiene que seguir funcionando por red local (`http://IP-del-portátil:3000`) sin cambiar código. Es el plan B.
+- **Principal: Render, plan gratuito.** El juego está publicado en **https://pasa-la-bomba-0db0.onrender.com** como *Web Service* gratuito (región Frankfurt), enlazado al repositorio de GitHub. **Cada vez que se fusiona algo en `main`, Render lo vuelve a publicar solo**; las ramas no se publican. Render ejecuta `npm install` y `npm start`, y da el puerto en la variable `PORT` (el servidor ya la lee).
+- Limitaciones del plan gratuito que el código tiene que respetar:
+  - **Una sola instancia**, así que las salas en memoria funcionan. No añadas nada que dependa de varias instancias.
+  - **Se duerme** si nadie entra en 15 minutos, y despertar tarda alrededor de un minuto. Antes de una demo, abrir la web un par de minutos antes.
+  - **Puede reiniciarse** en cualquier momento, y entonces se pierden las salas y las partidas. Es aceptable en un proyecto de clase; no añadas base de datos para evitarlo.
+  - **Sin disco persistente:** no guardes nada en archivos.
+- **Plan B: el portátil del alumno** (Windows x64, Ryzen 7 7435HS) con `npm start`, por la misma WiFi (`http://IP-del-portátil:3000`) o por internet con el túnel de `start.bat`. El mismo código tiene que funcionar en los dos sitios sin cambios.
+- Nunca escribas una URL fija en el código. El cliente usa siempre rutas relativas y `window.location`.
 - No hay base de datos. El estado de las partidas vive en memoria.
+- **Descartados** (sesión 7): Vercel, porque en el plan gratuito cada conexión se corta a los 5 minutos y cada jugador puede caer en una instancia distinta; y Supabase, porque obligaba a mover el servidor del juego al navegador del máster.
 
 ## 3. Stack cerrado
 
@@ -68,7 +72,7 @@ Requisitos del enunciado que no se pueden perder:
 | Servidor | Node.js, Express, Socket.IO |
 | Cliente | HTML, CSS, Canvas 2D y JavaScript sin framework ni paso de compilación |
 | Pruebas | `socket.io-client` como dependencia de desarrollo, para simular jugadores |
-| Túnel | `cloudflared` |
+| Publicación | Render, plan gratuito (sección 2); túnel `cloudflared` como plan B |
 
 Está prohibido añadir cualquier otra librería, framework, bundler o servicio externo sin permiso explícito del usuario. Si crees que hace falta una, explica por qué, espera el visto bueno y anótalo en el diario.
 
@@ -242,10 +246,10 @@ Es lo primero que ve quien abre el repositorio en GitHub (el profesorado incluid
 1. Esqueleto, crear sala y unirse, sala de espera e inicio por el máster. *(hecha)*
 2. Mapa aleatorio, movimiento, bomba, gadgets y victoria. *(hecha)*
 3. Pantalla de resultados, endpoint `GET /api/games/:id`, estética y accesibilidad. *(hecha)*
-4. Túnel, `start.bat` y prueba real con varios PC. Ajuste de los valores de `config.js` jugando. *(en curso)*
+4. Publicación en Render *(hecha, sesión 7)*, prueba real con varios PC y ajuste de los valores de `config.js` jugando. *(en curso)*
    - Pendiente conocido: el endpoint `GET /api/lan` del servidor (sesión 5).
    - Pendiente: que los jugadores se distingan mejor en el mapa (sesión 4).
-   - Pendiente: probar `start.bat` y el túnel, y una partida real con otra persona.
+   - Pendiente: una partida real con otra persona desde otro PC (ahora basta con abrir la web de Render). `start.bat` y el túnel quedan como plan B, sin probar.
 5. Presentación: completar el resumen del `DIARIO.md` y preparar la exposición (entrega hacia el 2-12-2026).
 
 Ideas sin decidir (no las empieces sin que el usuario lo pida y concrete):
@@ -263,7 +267,8 @@ El estado al día está en el resumen de `DIARIO.md`.
 npm install     instala dependencias
 npm start       arranca el servidor en http://localhost:3000
 npm test        comprueba las reglas y simula una partida completa (tarda unos 10 segundos)
-start.bat       arranca servidor y túnel, y muestra la URL para compartir
+https://pasa-la-bomba-0db0.onrender.com   el juego publicado (rama main)
+start.bat       plan B: arranca servidor y túnel en el portátil, y muestra la URL para compartir
 probar.bat      npm install + npm test con doble clic; deja el resultado en prueba.log
 subir.bat       sube a GitHub la rama en la que estés, con doble clic
 ```
@@ -278,4 +283,6 @@ Aprendidas en las sesiones 1 a 5. Tenlas en cuenta antes de prometer nada:
 - **GitHub:** no puedes crear repositorios ni invitar colaboradores. Desde la terminal del entorno de Claude, `git pull` y `git push` fallan (el proxy devuelve 403): haz el commit en la rama y pide al alumno que ejecute `subir.bat` y abra el pull request en la web (y que haga `git pull` en Windows si el otro coautor ha fusionado algo).
 - **Git necesita permiso de borrado** en la carpeta (para sus archivos `.lock`). Pídelo con la herramienta de permisos antes del primer commit de la sesión.
 - **No cambies la configuración de seguridad de Windows** (firewall, antivirus) aunque tengas forma de hacerlo: explícale al alumno cómo hacerlo él.
+- **Navegadores (sesión 7).** La extensión Claude in Chrome **no funciona en Opera GX** (falla al crear el grupo de pestañas); en **Google Chrome** sí, con las sesiones del alumno. Los inicios de sesión, contraseñas y códigos los pone siempre el alumno. Las ventanas emergentes que abre una web (por ejemplo, la autorización de GitHub) quedan fuera del alcance del agente: pide al alumno que las complete.
+- **Render:** el panel se maneja desde el Chrome del alumno. El entorno de la IA no puede abrir la web publicada con `curl` (su proxy no llega); para comprobarla, usa el navegador.
 - Si encuentras otra limitación, dila al usuario y añádela aquí y en el diario.

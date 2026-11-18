@@ -4,6 +4,12 @@ Juego web multijugador *hyper-casual* para el **DevChallenge3**. De 2 a 8 jugado
 
 Todo el proyecto se ha desarrollado con agentes de IA (Claude). Cómo se hizo, qué se pidió y qué falló está en **[DIARIO.md](DIARIO.md)**.
 
+## Jugar ahora
+
+**[https://pasa-la-bomba-0db0.onrender.com](https://pasa-la-bomba-0db0.onrender.com)**
+
+Abre el enlace, crea una sala y pasa el enlace de invitación a los demás. Está alojado gratis en Render: si nadie ha jugado en los últimos 15 minutos, la primera carga tarda alrededor de un minuto mientras el servidor se despierta. Si se reinicia, las salas abiertas se pierden.
+
 ## Cómo se juega
 
 1. Escribe un apodo y **crea una sala** o **únete** con un código de 4 letras (o con el enlace de invitación).
@@ -30,9 +36,9 @@ Los tiempos y multiplicadores exactos están en [`server/config.js`](server/conf
 | Moverse | **WASD** o **flechas** |
 | Menús y sala de espera | **Tab** y **Enter** |
 
-## Cómo arrancarlo
+## Cómo arrancarlo en tu ordenador
 
-Necesitas [Node.js](https://nodejs.org) 18 o superior. Todo funciona en un único ordenador que hace de servidor; los demás jugadores solo necesitan un navegador.
+No hace falta para jugar (usa el enlace de arriba), pero sirve como plan B o para desarrollar. Necesitas [Node.js](https://nodejs.org) 18 o superior. El servidor corre en un único ordenador; los demás jugadores solo necesitan un navegador.
 
 ### En Windows, con doble clic
 
@@ -86,6 +92,7 @@ La partida en tiempo real va por **WebSockets** (Socket.IO). Los eventos están 
 
 - **Servidor:** Node.js, Express y Socket.IO. Es *autoritativo*: los navegadores solo envían las teclas pulsadas, y el servidor mueve a los jugadores, decide quién lleva la bomba y quién gana. Envía el estado 20 veces por segundo.
 - **Cliente:** HTML, CSS, Canvas 2D y JavaScript, sin frameworks ni compilación.
+- **Publicación:** Render, plan gratuito. Cada cambio que se fusiona en la rama `main` se publica solo.
 - **Sin login ni base de datos:** apodo y código de sala; todo vive en memoria.
 - **Mapa:** cuadrícula de 40×30 casillas con muros al azar; los jugadores y los gadgets solo aparecen en casillas alcanzables.
 
