@@ -110,7 +110,7 @@ DevChallenge3/
 ├── start.bat              arranca servidor + túnel y muestra la URL
 ├── probar.bat             instala dependencias, ejecuta la prueba y guarda prueba.log (ignorado por git)
 ├── subir.bat              sube a GitHub la rama actual con doble clic (local, ignorado por git; ahora es el plan B)
-├── autosubida.ps1         sube las ramas con commits nuevos (nunca main) cuando existe .subir-ahora
+├── autosubida.ps1         sube las ramas con commits nuevos cuando existe .subir-ahora, y avanza main hasta una rama cuando existe .fusionar-main
 ├── autosubida.vbs         lo lanza la tarea programada cada minuto, sin abrir ventanas
 ├── instalar-autosubida.bat / quitar-autosubida.bat   crean o quitan la tarea programada en el Windows de cada coautor
 ├── .github/workflows/abrir-pull-request.yml   abre solo el pull request a main al subir una rama
@@ -219,6 +219,7 @@ Si algo no se ha podido probar, dilo claramente al usuario y anótalo en el diar
   3. **Subida, siempre preguntando antes.** Al terminar la tarea, con el commit hecho y probado, pregunta al usuario: **«¿Subo los cambios a GitHub?»**. Si dice que no, no subas nada. Si dice que sí:
      - Si tu entorno puede hacer `git push` (por ejemplo, Codex en el PC de Adriana con su sesión de GitHub), haz `git push -u origin <rama>` directamente.
      - Si no puede (Claude en Cowork: su red no llega a GitHub), **crea un archivo vacío `.subir-ahora` en la raíz del proyecto**. La tarea programada `PasaLaBomba-autosubida` del Windows de ese coautor lo ve en menos de un minuto, sube las ramas con commits nuevos (nunca `main`, nunca forzado) con su sesión de GitHub y borra el archivo.
+     - (`.fusionar-main` es otra cosa: fusiona una rama en `main`. Solo con las comprobaciones y el «sí» que pide `FUSION.md`.)
      - Comprueba el resultado: el archivo `.subir-ahora` desaparece y `autosubida.log` dice «Subida <rama>». Si en dos minutos sigue ahí, la tarea no está instalada en ese ordenador: díselo al usuario y ofrécele instalarla con doble clic en `instalar-autosubida.bat` (una sola vez por ordenador) o usar `subir.bat`.
   4. Al llegar la rama a GitHub, **GitHub Actions abre el pull request a `main`** (`.github/workflows/abrir-pull-request.yml`), con la primera línea del último commit como título. El otro coautor lo revisa y lo fusiona. El agente nunca fusiona en `main` por su cuenta.
   5. Las ramas **no se borran** después de fusionarlas: sirven para la presentación.

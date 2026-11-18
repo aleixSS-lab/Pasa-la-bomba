@@ -8,7 +8,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 10, 18-11-2026.*
+*Última actualización: sesión 11, 18-11-2026.*
 
 ## Estado actual
 
@@ -34,6 +34,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 8 | 18-11 | Subir a GitHub sin clics | El agente pregunta «¿Subo los cambios?» y, con el sí, una tarea de Windows los sube; GitHub Actions abre el pull request |
 | 9 | 18-11 | Documentar siempre y aprovechar ramas | Lista de documentos que actualizar al terminar cada tarea; las ramas salen de la rama que se aprovecha |
 | 10 | 18-11 | Icono en la pestaña del navegador | La bomba como favicon (SVG e ICO); no se veía porque Render solo publica `main` y no se había fusionado nada |
+| 11 | 18-11 | Fusionar en `main` con normas | Lista de comprobaciones decidida por el alumno con un test; el agente fusiona solo tras el «sí» |
 
 ## 1. Herramientas de IA
 
@@ -61,6 +62,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «No deja acceder a Adriana a mi local» | Lección: probar la red desde otro PC |
 | «Que los emoticonos sean tal cual lo que son» | Dibujos en canvas en vez de emojis |
 | «Que los agentes suban todo sin tener que darle clic a un .bat» | El agente pregunta y, con el sí, deja una marca que una tarea de Windows convierte en `git push`; GitHub Actions abre el pull request |
+| «Haz un nuevo documento que haga el rol de normas… verificar un número x de cosas que podemos establecer tú y yo mediante un test» | `FUSION.md`: qué comprobar antes y después de fusionar en `main`, decidido con preguntas tipo test |
 | «Mira a ver si nos vendría bien Vercel y Supabase» | La IA leyó su documentación y los descartó; propuso Render, que no obliga a cambiar el código |
 | «Antes de hacer nada, que lean el repositorio» y «si hay una rama que puedan aprovechar, que salgan de ella» | Varias conversaciones y dos agentes a la vez sin pisarse: cada uno lee lo nuevo y construye encima |
 
@@ -530,3 +532,42 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Pendiente de investigar por el alumno:** qué es un *favicon* y por qué SVG (gráficos vectoriales) se ve bien a cualquier tamaño.
 
 **Siguiente paso:** fusionar en orden los pull requests pendientes; ver el icono en la pestaña de la web de Render.
+
+---
+
+## Sesión 11 — 2026-11-18 — Normas para fusionar en `main` y una rama por cambio
+
+**Autor:** Aleix.
+**Herramienta:** Claude en modo Cowork, modelo configurado `claude-opus-5-5`, con PowerShell 7 en el entorno de la IA para probar el script. Misma conversación que las sesiones 7, 8 y 10.
+
+**Qué se pidió:**
+
+1. Respondiendo a cómo publicar el icono: «Cambia las normas, tenéis que preguntar los agentes si queremos nosotros que ajunte todo al main, o mejor, haz un nuevo documento que haga el rol de normas, ahí cada vez que se tenga que fusionar en el main tiene que verificar un número x de cosas que podemos establecer tú y yo ahora mediante un test».
+2. A mitad de la tarea: «Cada cambio nuevo tiene que ir a su rama específica, si vas a crear un documento nuevo, se crea la rama docs-… y se sube, y si se va a hacer otra cosa pues lo mismo, todo bien ordenado».
+
+**Respuestas del alumno al test** (cuatro preguntas tipo test que hizo la IA):
+
+- **Antes de fusionar** hay que comprobar las cuatro cosas propuestas: `npm test` pasa, prueba en el navegador (flujo completo con dos jugadores y capturas), documentación al día, y sin conflictos ni sorpresas.
+- **Quién aprueba:** basta el «sí» de quien está con el agente (Aleix o Adriana). Se descartó esperar al otro coautor o a los dos.
+- **Cómo:** lo hace el agente, sin clics. Se descartó que el alumno pulse «Merge» en GitHub.
+- **Después de fusionar** hay que comprobar las tres cosas propuestas: la web de Render, GitHub al día y dejar avisado al otro coautor.
+
+**Qué se hizo (rama `net-fusion-main`, el mecanismo):**
+
+- `autosubida.ps1` y `autosubida.vbs` atienden una segunda marca, `.fusionar-main`, con el nombre de la rama dentro. La tarea de Windows trae lo último de GitHub (`git fetch`) y comprueba que la rama está subida tal cual y que contiene todo lo que ya tiene `main`. Si es así, avanza `main` hasta la rama (*fast-forward*); si no, no toca nada y explica el motivo en `autosubida.log`.
+- Probado con PowerShell 7 contra un «GitHub» falso en seis casos: subir ramas sigue funcionando; fusiona una rama correcta; rechaza una rama con commits sin subir; rechaza si `main` tiene algo que la rama no tiene; rechaza una rama inexistente o `main`; sin marcas no hace nada.
+
+**Decisiones y por qué:**
+
+- **Fusionar = avanzar `main` (fast-forward)** (decisión de la IA): no crea commits de fusión, no cambia de rama en el portátil mientras el alumno trabaja y GitHub rechaza cualquier cosa que no sea un avance limpio, así que no se puede perder trabajo. Los pull requests incluidos aparecen como fusionados solos.
+- **Una marca distinta para fusionar**, para que pedir «sube los cambios» nunca pueda tocar `main` por accidente.
+- **Cada cambio en su rama** (petición 2): el mecanismo va en `net-fusion-main` y el documento de normas en `docs-normas-fusion`, que sale de la anterior. Cada una se sube con su «sí».
+
+**Qué falló y cómo se arregló:**
+
+- Un mensaje de error decía que la rama `main` «no existe» cuando lo que pasa es que no se puede fusionar `main` en sí misma; se corrigió el texto.
+- La prueba se hizo en el entorno Linux de la IA; la primera fusión real en Windows será la prueba de verdad.
+
+**Pendiente de investigar por el alumno:** qué es una fusión *fast-forward* y en qué se diferencia de un *merge commit*.
+
+**Siguiente paso:** escribir `FUSION.md` en la rama `docs-normas-fusion` y hacer la primera fusión siguiendo sus normas.
