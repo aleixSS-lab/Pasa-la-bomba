@@ -1,0 +1,34 @@
+# Abre automáticamente un pull request a main cada vez que se sube una rama nueva.
+# Lo revisa y lo fusiona el otro coautor (CLAUDE.md, sección 6.3). Nunca fusiona nada.
+# Requiere en GitHub: Settings → Actions → General → Workflow permissions →
+# «Allow GitHub Actions to create and approve pull requests».
+name: Abrir pull request
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  abrir:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Abrir el pull request si no existe
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          abierto=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [ -n "$abierto" ]; then
+            echo "La rama $BRANCH ya tiene el pull request #$abierto abierto."
+            exit 0
+          fi
+          titulo=$(gh api "repos/$REPO/commits/$SHA" --jq '.commit.message | split("\n")[0]')
+          gh pr create --repo "$REPO" --base main --head "$BRANCH" --title "$titulo" \
+            --body "Pull request abierto automáticamente al subir la rama \`$BRANCH\`. Lo revisa y lo fusiona el otro coautor (CLAUDE.md, sección 6.3). Si la rama parte de otra que aún no está en main, fusiona primero esa."

@@ -8,7 +8,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 7, 18-11-2026.*
+*Última actualización: sesión 8, 18-11-2026.*
 
 ## Estado actual
 
@@ -31,6 +31,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 5 | 18-11 | Mejora de `CLAUDE.md`, diario y `README.md` | Detectado el fallo perdido de la sesión 3 |
 | 6 | 18-11 | El Codex de Adriana no encontraba las dependencias | No era incompatibilidad: un clon nuevo no trae `node_modules/`; documentado en `AGENTS.md` |
 | 7 | 18-11 | Publicar el juego gratis en internet | Vercel y Supabase descartados tras leer su documentación; publicado en Render desde el Chrome del alumno |
+| 8 | 18-11 | Subir a GitHub sin clics | Tarea programada que sube las ramas sola y GitHub Actions que abre los pull requests |
 
 ## 1. Herramientas de IA
 
@@ -57,6 +58,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Cambia el objetivo… mejórame las ideas» | Pasa la bomba; la IA añadió velocidad extra, inmunidad, parada al recibir y espectadores |
 | «No deja acceder a Adriana a mi local» | Lección: probar la red desde otro PC |
 | «Que los emoticonos sean tal cual lo que son» | Dibujos en canvas en vez de emojis |
+| «Que los agentes suban todo sin tener que darle clic a un .bat» | Tarea programada de Windows + GitHub Actions; el agente solo hace commit |
 | «Mira a ver si nos vendría bien Vercel y Supabase» | La IA leyó su documentación y los descartó; propuso Render, que no obliga a cambiar el código |
 
 ## 4. Qué tuvo que investigar el alumno
@@ -71,6 +73,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Detección de choques (distancia entre centros) y *flood fill* para el mapa.
 - Canvas 2D (`arc`, `lineTo`, `fill`) e imágenes `data:`.
 - Git: remoto, `commit` frente a `push`, ramas y pull requests.
+- Tareas programadas de Windows y GitHub Actions (automatizar subida y pull requests).
 - Hosting: servidor persistente (Render) frente a funciones *serverless* (Vercel), y qué es un servicio *realtime* como Supabase.
 
 ## 5. Qué no funcionó a la primera
@@ -82,6 +85,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - **Bomba que se devolvía sin parar** → la IA añadió por su cuenta la parada de medio segundo al recibirla.
 - **Enlace de invitación con `localhost`** → arreglo en la sesión 3 que **no se guardó** en el servidor; detectado en la sesión 5.
 - **Trampa de oso irreconocible** → la IA lo vio en las capturas y la redibujó.
+- **El agente no puede hacer `git push`** (su red lo bloquea) → la subida la hace una tarea programada del portátil con la sesión de GitHub del alumno.
 - **El usuario pidió usar su Opera** → la extensión no funciona en Opera; se hizo desde Chrome.
 - **Lo que las pruebas automáticas no dicen:** si el juego es divertido o está equilibrado. Hace falta jugar con personas.
 
@@ -411,3 +415,36 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Pendiente de investigar por el alumno:** diferencia entre un servidor que está siempre encendido (Render) y las funciones *serverless* (Vercel); qué es un servicio *realtime* como Supabase; qué es un despliegue automático desde GitHub.
 
 **Siguiente paso:** fusionar `docs-instrucciones` y `net-render` en `main`; arreglar `/api/lan` si el alumno lo pide; jugar una partida real con Adriana desde la web de Render.
+
+---
+
+## Sesión 8 — 2026-11-18 — Subir a GitHub sin clics: tarea programada y pull requests automáticos
+
+**Autor:** Aleix.
+**Herramienta:** Claude en modo Cowork, modelo configurado `claude-opus-5-5`, con control del ordenador (Explorador de archivos) y PowerShell 7 en el entorno de la IA para probar el script.
+
+**Qué se pidió:** «Hay que hacer que los agentes suban todo sin tener que ir a darle un click a un .bat, queremos que lo hagáis vosotros, más automatizado».
+
+**Qué se hizo:**
+
+- `autosubida.ps1`: sube a GitHub las ramas con commits nuevos. No sube nunca `main` ni fuerza nada; si GitHub tiene commits que no están en el portátil, no sube y lo apunta; si git está ocupado, espera a la vuelta siguiente. Apunta lo que hace en `autosubida.log`.
+- `autosubida.vbs` para lanzarlo sin abrir ventanas, e `instalar-autosubida.bat` / `quitar-autosubida.bat`, que crean o quitan una **tarea programada de Windows** que lo ejecuta cada 2 minutos.
+- `.github/workflows/abrir-pull-request.yml`: **GitHub Actions** abre el pull request a `main` en cuanto llega una rama nueva, con el título del último commit. No fusiona nada.
+- `CLAUDE.md` (secciones 5, 6.3, 9 y 10) y `README.md` actualizados con el flujo nuevo.
+
+**Decisiones y por qué:**
+
+- **Por qué no hace el push el agente directamente** (decisión de la IA, explicada al alumno): el entorno de Claude no puede escribir en GitHub (su red devuelve 403 y no hay forma de conectarle el repositorio desde esta app). El único sitio con permiso para subir es el Windows del alumno, que ya tiene la sesión de GitHub iniciada.
+- **Tarea programada cada 2 minutos** en vez de vigilar la carpeta en tiempo real: más simple y sin programas extra. Se descartó también un *hook* de git, porque los commits de la IA se hacen desde su entorno Linux y el hook se ejecutaría allí, donde no se puede subir.
+- **Nunca `main` y nunca forzar:** encaja con las normas de la sesión 5 (a `main` solo se llega por pull request y no se reescribe lo subido).
+- **GitHub Actions** es gratis en repositorios públicos y viene con GitHub, así que no añade ningún servicio nuevo. Necesita activar una opción en el repositorio (Settings → Actions → General → «Allow GitHub Actions to create and approve pull requests»).
+- **Rama `net-autosubida`** a partir de `net-render`, por el mismo motivo que en la sesión 7: evitar conflictos en el diario. Orden de fusión: #1 `docs-instrucciones`, después `net-render`, después esta.
+
+**Qué falló y cómo se arregló:**
+
+- **No se puede probar PowerShell en Windows desde la IA**, así que se descargó PowerShell 7 en su entorno Linux y se probó el script contra un «GitHub» falso (un repositorio local) en cuatro casos: sube ramas nuevas y avanzadas; no sube `main`; no sube si el remoto tiene commits que no están en local; no hace nada si hay un `.lock`. Todo correcto. Falta la prueba de verdad en Windows con la tarea programada.
+- **Un fallo evitado al escribirlo:** en PowerShell, `"$rama:"` dentro de un texto se interpreta como otra cosa; hay que escribir `"${rama}:"`.
+
+**Pendiente de investigar por el alumno:** qué es una tarea programada de Windows; qué es GitHub Actions y qué es un *workflow*; por qué el script no fuerza nunca un `push`.
+
+**Siguiente paso:** instalar la tarea programada (doble clic en `instalar-autosubida.bat`), activar la opción de GitHub Actions y comprobar que esta rama sube sola y se abre su pull request.

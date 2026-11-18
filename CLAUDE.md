@@ -94,7 +94,11 @@ DevChallenge3/
 ├── package.json
 ├── start.bat              arranca servidor + túnel y muestra la URL
 ├── probar.bat             instala dependencias, ejecuta la prueba y guarda prueba.log (ignorado por git)
-├── subir.bat              sube a GitHub la rama actual con doble clic (local, ignorado por git)
+├── subir.bat              sube a GitHub la rama actual con doble clic (local, ignorado por git; ahora es el plan B)
+├── autosubida.ps1         sube solas las ramas con commits nuevos (nunca main); lo lanza la tarea programada
+├── autosubida.vbs         lanza autosubida.ps1 sin abrir ventanas
+├── instalar-autosubida.bat / quitar-autosubida.bat   crean o quitan la tarea programada de Windows
+├── .github/workflows/abrir-pull-request.yml   abre solo el pull request a main al subir una rama
 ├── server/
 │   ├── index.js           Express, Socket.IO, salas, sala de espera y API REST
 │   ├── config.js          valores ajustables del juego (tiempos, velocidades, gadgets)
@@ -191,10 +195,12 @@ Si algo no se ha podido probar, dilo claramente al usuario y anótalo en el diar
 - Flujo de cada rama:
   1. `git checkout main` y `git pull`, y después `git checkout -b <prefijo-nombre>`.
   2. Trabaja, prueba y haz commit en la rama. La entrada del diario de la sesión va en la misma rama.
-  3. Al cerrar la sesión, `git push -u origin <rama>`. No hace falta pedir permiso para esto.
-  4. Se abre un **pull request** a `main` en GitHub. El otro coautor lo revisa y lo fusiona. El agente nunca fusiona en `main` por su cuenta.
+  3. **La subida es automática.** En el portátil de Aleix, la tarea programada `PasaLaBomba-autosubida` sube cada 2 minutos las ramas con commits nuevos, con la sesión de GitHub de Windows. No hace falta ningún clic. Si tu entorno puede hacer `git push -u origin <rama>` directamente (el Codex de Adriana), hazlo; no hace falta pedir permiso.
+  4. Al llegar la rama a GitHub, **GitHub Actions abre el pull request a `main`** (`.github/workflows/abrir-pull-request.yml`), con la primera línea del último commit como título. El otro coautor lo revisa y lo fusiona. El agente nunca fusiona en `main` por su cuenta.
   5. Las ramas **no se borran** después de fusionarlas: sirven para la presentación.
-- Si el push falla (sin credenciales, sin red), dilo y pide al alumno que ejecute `subir.bat`, que sube la rama en la que esté. Si no puedes abrir el pull request, dale al alumno el título y una descripción de dos o tres líneas para pegarlos en GitHub.
+- **Consecuencia de la subida automática:** todo commit en una rama acaba en GitHub en dos minutos. Haz commit solo de trabajo probado; nunca hagas commit en `main` (la tarea no lo sube, pero se quedaría desincronizado).
+- **Comprueba que se ha subido** (unos 2 minutos después del commit): las últimas líneas de `autosubida.log` deben decir «Subida <rama>», y `git ls-remote` desde tu entorno, si lo tienes, debe mostrar el commit. Si el log dice AVISO o ERROR, explícaselo al alumno.
+- Plan B si la tarea no está instalada o falla: `subir.bat`, que el agente puede lanzar con un doble clic si el alumno le da acceso al Explorador de archivos. Si no se abre el pull request automático, dale al alumno el título y una descripción de dos o tres líneas para pegarlos en GitHub.
 - Si hay conflicto con `main`, no lo resuelvas a ciegas: para y explica al usuario qué choca.
 - No des la sesión por subida sin haberlo comprobado con `git status -sb`.
 
@@ -270,7 +276,9 @@ npm test        comprueba las reglas y simula una partida completa (tarda unos 1
 https://pasa-la-bomba-0db0.onrender.com   el juego publicado (rama main)
 start.bat       plan B: arranca servidor y túnel en el portátil, y muestra la URL para compartir
 probar.bat      npm install + npm test con doble clic; deja el resultado en prueba.log
-subir.bat       sube a GitHub la rama en la que estés, con doble clic
+subir.bat       plan B: sube a GitHub la rama en la que estés, con doble clic
+instalar-autosubida.bat   instala la subida automática cada 2 minutos (una sola vez)
+quitar-autosubida.bat     la quita
 ```
 
 ## 10. Limitaciones del entorno de la IA
@@ -280,7 +288,7 @@ Aprendidas en las sesiones 1 a 5. Tenlas en cuenta antes de prometer nada:
 - **Sin acceso al registro de npm** (error 403). No puedes ejecutar `npm install`. Las dependencias ya están en `node_modules/`; si hace falta reinstalar, pide al alumno que haga doble clic en `probar.bat` y lee después `prueba.log`. Lo mismo en un clon nuevo del repositorio, que no trae `node_modules/` (está en `.gitignore`): le pasó al Codex de Adriana el 18-11. Mejor trabajar en la copia que el alumno ya tiene instalada.
 - **No puedes usar la terminal de Windows ni el escritorio del alumno** salvo que te dé acceso. Lo que tenga que ejecutarse en Windows (`start.bat`, `cloudflared`, el firewall) lo hace el alumno; dale los pasos exactos.
 - **Tu navegador de pruebas no puede conectarse por WebSocket a la IP de red local** (lo bloquea su proxy). Por `localhost` sí. La prueba desde otro PC la hace el alumno.
-- **GitHub:** no puedes crear repositorios ni invitar colaboradores. Desde la terminal del entorno de Claude, `git pull` y `git push` fallan (el proxy devuelve 403): haz el commit en la rama y pide al alumno que ejecute `subir.bat` y abra el pull request en la web (y que haga `git pull` en Windows si el otro coautor ha fusionado algo).
+- **GitHub:** no puedes crear repositorios ni invitar colaboradores. Desde la terminal del entorno de Claude, `git pull` y `git push` fallan (el proxy devuelve 403). Por eso existe la subida automática (sección 6.3): haz el commit en la rama y la tarea programada la sube. Lo que sigue sin poder hacerse es `git pull`: si el otro coautor ha fusionado algo, pide al alumno que haga `git pull` en Windows. Leer GitHub sí se puede (`git clone` o `git ls-remote` desde el entorno de Claude).
 - **Git necesita permiso de borrado** en la carpeta (para sus archivos `.lock`). Pídelo con la herramienta de permisos antes del primer commit de la sesión.
 - **No cambies la configuración de seguridad de Windows** (firewall, antivirus) aunque tengas forma de hacerlo: explícale al alumno cómo hacerlo él.
 - **Navegadores (sesión 7).** La extensión Claude in Chrome **no funciona en Opera GX** (falla al crear el grupo de pestañas); en **Google Chrome** sí, con las sesiones del alumno. Los inicios de sesión, contraseñas y códigos los pone siempre el alumno. Las ventanas emergentes que abre una web (por ejemplo, la autorización de GitHub) quedan fuera del alcance del agente: pide al alumno que las complete.

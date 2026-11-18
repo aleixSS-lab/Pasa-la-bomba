@@ -46,6 +46,7 @@ No hace falta para jugar (usa el enlace de arriba), pero sirve como plan B o par
 |---|---|
 | `probar.bat` | Instala las dependencias y ejecuta la prueba automática. Deja el resultado en `prueba.log`. |
 | `start.bat` | Arranca el servidor y, si está instalado `cloudflared`, el túnel para jugar por internet. Muestra la dirección que hay que compartir. |
+| `instalar-autosubida.bat` | Para quien desarrolla: instala una tarea programada que sube a GitHub cada 2 minutos las ramas con commits nuevos (nunca `main`). `quitar-autosubida.bat` la quita. |
 
 ### Desde la terminal
 
@@ -93,6 +94,7 @@ La partida en tiempo real va por **WebSockets** (Socket.IO). Los eventos están 
 - **Servidor:** Node.js, Express y Socket.IO. Es *autoritativo*: los navegadores solo envían las teclas pulsadas, y el servidor mueve a los jugadores, decide quién lleva la bomba y quién gana. Envía el estado 20 veces por segundo.
 - **Cliente:** HTML, CSS, Canvas 2D y JavaScript, sin frameworks ni compilación.
 - **Publicación:** Render, plan gratuito. Cada cambio que se fusiona en la rama `main` se publica solo.
+- **Flujo de trabajo:** una rama por cambio; al subirla, GitHub Actions abre el pull request a `main` automáticamente, y el otro coautor lo revisa y lo fusiona.
 - **Sin login ni base de datos:** apodo y código de sala; todo vive en memoria.
 - **Mapa:** cuadrícula de 40×30 casillas con muros al azar; los jugadores y los gadgets solo aparecen en casillas alcanzables.
 
