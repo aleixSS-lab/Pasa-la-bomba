@@ -286,6 +286,8 @@ Es lo primero que ve quien abre el repositorio en GitHub (el profesorado incluid
    - Pendiente: una partida real con otra persona desde otro PC (ahora basta con abrir la web de Render). `start.bat` y el túnel quedan como plan B, sin probar.
 5. Presentación: completar el resumen del `DIARIO.md` y preparar la exposición (entrega hacia el 2-12-2026).
 
+**Reparto de las próximas sesiones (sesión 12):** Adriana se encarga de estética y usabilidad (ramas `view-`) y Aleix de jugabilidad (ramas `game-`). La lista de tareas de cada uno está en `DIARIO.md`, sesión 12: al empezar, mira la tuya y marca lo que termines en la entrada de tu sesión.
+
 Ideas sin decidir (no las empieces sin que el usuario lo pida y concrete):
 
 - **Versión `.exe`** además de la web. Todavía no está decidido si el `.exe` solo arranca el servidor (para no instalar Node.js) o es el juego completo en una ventana. Cualquiera de las dos necesita una herramienta de empaquetado que hoy no está en el stack (sección 3): propón opciones, espera el visto bueno y anótalo en el diario.

@@ -8,7 +8,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 11, 18-11-2026.*
+*Última actualización: sesión 12, 18-11-2026.*
 
 ## Estado actual
 
@@ -19,6 +19,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 - **Fase:** 4 de 5 (red real y ajuste jugando).
 - **Entrega:** hacia el 2-12-2026.
 - **Idea sin decidir:** versión `.exe` además de la web.
+- **Próximas sesiones (reparto de la sesión 12):** Adriana, estética y usabilidad (`view-`); Aleix, jugabilidad (`game-`). Lista completa en la sesión 12.
 
 ## Sesiones
 
@@ -35,6 +36,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 9 | 18-11 | Documentar siempre y aprovechar ramas | Lista de documentos que actualizar al terminar cada tarea; las ramas salen de la rama que se aprovecha |
 | 10 | 18-11 | Icono en la pestaña del navegador | La bomba como favicon (SVG e ICO); no se veía porque Render solo publica `main` y no se había fusionado nada |
 | 11 | 18-11 | Fusionar en `main` con normas | Lista de comprobaciones decidida por el alumno con un test; el agente fusiona solo tras el «sí» |
+| 12 | 18-11 | Lluvia de ideas y reparto de tareas | La IA propuso ~30 mejoras; el alumno las aprobó todas y repartió: Adriana estética y usabilidad, Aleix jugabilidad |
 
 ## 1. Herramientas de IA
 
@@ -64,6 +66,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Que los agentes suban todo sin tener que darle clic a un .bat» | El agente pregunta y, con el sí, deja una marca que una tarea de Windows convierte en `git push`; GitHub Actions abre el pull request |
 | «Haz un nuevo documento que haga el rol de normas… verificar un número x de cosas que podemos establecer tú y yo mediante un test» | `FUSION.md`: qué comprobar antes y después de fusionar en `main`, decidido con preguntas tipo test |
 | «Mira a ver si nos vendría bien Vercel y Supabase» | La IA leyó su documentación y los descartó; propuso Render, que no obliga a cambiar el código |
+| «Vamos a hacer una lluvia de ideas para añadir funciones y mejoras» | Lista de mejoras por temas con esfuerzo y rama; el alumno la convirtió en el plan de trabajo de las dos últimas semanas |
 | «Antes de hacer nada, que lean el repositorio» y «si hay una rama que puedan aprovechar, que salgan de ella» | Varias conversaciones y dos agentes a la vez sin pisarse: cada uno lee lo nuevo y construye encima |
 
 ## 4. Qué tuvo que investigar el alumno
@@ -580,3 +583,66 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Pendiente de investigar por el alumno:** qué es una fusión *fast-forward* y en qué se diferencia de un *merge commit*.
 
 **Siguiente paso:** escribir `FUSION.md` en la rama `docs-normas-fusion` y hacer la primera fusión siguiendo sus normas.
+
+---
+
+## Sesión 12 — 2026-11-18 — Lluvia de ideas y reparto de tareas para las próximas sesiones
+
+**Autor:** Aleix.
+**Herramienta:** Claude en la aplicación de escritorio, modelo `claude-opus-5-5`. Un único agente.
+
+**Qué se pidió:**
+
+1. «Vamos a hacer una lluvia de ideas para añadir funciones y mejoras en el juego».
+2. «Okey, vamos a hacer todo esto, para ello quiero que para Adriana pongas que haga estética y usabilidad, y para Aleix jugabilidad de momento, eso irá en diario, en la sesión de hoy pendiente para hacer las próximas sesiones».
+
+**Qué se hizo:**
+
+- La IA leyó `CLAUDE.md`, el diario y el código, y propuso unas 30 ideas agrupadas por tema, con el esfuerzo aproximado y la rama que tocaría a cada una. Recomendó un orden para las dos semanas que quedan.
+- El alumno aprobó la lista entera y la repartió por temas. Solo cambia documentación (este diario y la sección 8 de `CLAUDE.md`); no se ha tocado código.
+
+**Reparto de tareas (pendiente para las próximas sesiones):**
+
+*Adriana (Codex/ChatGPT) — estética y usabilidad, ramas `view-`:*
+
+- [ ] Que los jugadores se distingan mejor en el mapa (pendiente desde la sesión 4).
+- [ ] Minimapa en una esquina (el mapa de 40×30 no cabe en pantalla).
+- [ ] Flecha en el borde de la pantalla que señala al portador de la bomba (o a ti, si la llevas).
+- [ ] Explosión con partículas y temblor de pantalla, desactivados con `prefers-reduced-motion`.
+- [ ] Mecha que se acorta y parpadea en los últimos 5 segundos.
+- [ ] Estadísticas al final de la partida: veces con la bomba, tiempo con ella y gadgets pisados. Necesita que el servidor cuente esos datos; si se añaden a `GET /api/games/:id`, coordinar con Aleix porque toca `server/game.js`.
+- [ ] Elegir color y forma en la sala de espera.
+- [ ] Pantalla de «cómo se juega» con los iconos animados.
+
+*Aleix (Claude) — jugabilidad, ramas `game-`:*
+
+- [ ] Bots para rellenar la sala (para probar solo y para la demo). Recomendada como la primera.
+- [ ] Esprint con tiempo de recarga (tecla Espacio).
+- [ ] Gadgets nuevos: escudo (no se puede recibir la bomba 3 s), portales y hielo. Valores en `config.js`; los dibujos de los iconos siguen la norma de accesibilidad (sección 6.4).
+- [ ] Mapa que se encoge en las últimas rondas.
+- [ ] Dos bombas a la vez con 6 a 8 jugadores.
+- [ ] Partidas al mejor de 3 rondas con puntos acumulados.
+- [ ] Tipos de mapa (laberinto, arena abierta, islas). **Ojo:** en la sesión 6 se dijo que el Codex de Adriana iba a trabajar en mapas y selección de sala; confirmar con ella antes de empezar.
+
+*Sin asignar todavía (se decide más adelante):*
+
+- Pendientes de red: el endpoint `GET /api/lan` del servidor (sesión 5) y la partida real con otra persona desde otro PC.
+- Accesibilidad extra: modo de alto contraste o para daltónicos, teclas configurables, texto más grande, aviso por `aria-live` a los 5 segundos de la explosión. Encaja con el trabajo de Adriana (`view-`).
+- Red y salas (`net-`): reconexión al refrescar la página, botón de revancha, modo espectador o proyector para la exposición, indicador de ping, lista de salas abiertas o «partida rápida».
+- Fuera de lo que permite `CLAUDE.md` salvo que se pida expresamente: sonido con la Web Audio API (sin archivos ni dependencias, con botón de silencio) y selector de idiomas con catalán (`i18n.js` ya lo prepara).
+
+**Decisiones y por qué:**
+
+- **Las ideas las propuso la IA; el alumno decidió hacerlas todas y el reparto** (Adriana estética y usabilidad, Aleix jugabilidad). Reparto por temas para que cada uno trabaje en archivos distintos: lo visual vive sobre todo en `public/`, la jugabilidad en `server/game.js` y `server/config.js`.
+- **«De momento»:** el reparto puede cambiar; lo que queda sin asignar se reparte cuando alguno termine.
+- Todo lo nuevo sigue las normas de siempre: una rama por idea, textos en `i18n.js`, números en `config.js`, los cinco puntos de accesibilidad y `npm test` antes de subir.
+- Rama `docs-reparto-ideas`, desde `main` (todas las ramas anteriores ya estaban fusionadas; `autosubida.log` lo confirma con la fusión de `docs-normas-fusion`).
+
+**Qué falló y cómo se arregló:**
+
+- `git fetch` sigue sin funcionar desde el entorno de Claude (403 del proxy), así que no se ha podido ver si Adriana ha subido algo nuevo. Se ha trabajado con lo que hay en el portátil: hace falta que Aleix haga `git pull` si sospecha que hay cambios suyos.
+- Al ser una lluvia de ideas, no hay nada que probar en el juego; `npm test` se ejecuta igualmente antes del commit.
+
+**Pendiente de investigar por el alumno:** qué es `prefers-reduced-motion` y por qué importa para la accesibilidad; cómo se programa un bot sencillo (moverse hacia un objetivo o huir de él) en un servidor autoritativo.
+
+**Siguiente paso:** Aleix empieza por los bots (`game-bots`); Adriana, por que los jugadores se distingan mejor (`view-jugadores-visibles`). Avisar a Adriana de este reparto y de que haga `git pull`.
