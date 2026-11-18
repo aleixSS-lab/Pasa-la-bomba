@@ -33,7 +33,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 7 | 18-11 | Publicar el juego gratis en internet | Vercel y Supabase descartados tras leer su documentación; publicado en Render desde el Chrome del alumno |
 | 8 | 18-11 | Subir a GitHub sin clics | El agente pregunta «¿Subo los cambios?» y, con el sí, una tarea de Windows los sube; GitHub Actions abre el pull request |
 | 9 | 18-11 | Documentar siempre y aprovechar ramas | Lista de documentos que actualizar al terminar cada tarea; las ramas salen de la rama que se aprovecha |
-| 10 | 18-11 | Icono en la pestaña del navegador | La bomba del juego como favicon en SVG; probado a 16 y 32 px sobre pestañas claras y oscuras |
+| 10 | 18-11 | Icono en la pestaña del navegador | La bomba como favicon (SVG e ICO); no se veía porque Render solo publica `main` y no se había fusionado nada |
 
 ## 1. Herramientas de IA
 
@@ -520,6 +520,12 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 
 - **El portátil estaba en otra rama** (`docs-flujo-agentes`), creada por otra conversación mientras esta trabajaba. Se revisó antes de empezar y se partió de ella, sin pisar nada.
 - En la prueba, el servidor de pruebas de la IA sirvió el SVG como `application/octet-stream`. Es cosa de su servidor simplificado; Express, el real, lo sirve como `image/svg+xml`. Falta verlo en la web publicada cuando se fusione en `main`.
+
+**Segundo prompt:** «No veo el emoticono, tienes que arreglarlo, yo me refiero al emoticono de ventana».
+
+- **Causa:** el icono estaba bien hecho, pero solo en la rama `view-icono-pestana`. Render publica únicamente `main`, y todavía no se ha fusionado ningún pull request, así que la web publicada no lo tiene (la IA lo comprobó: `/favicon.svg` daba 404 en Render). La IA no lo explicó claramente al terminar la primera parte: dijo que haría falta fusionar, pero no que hasta entonces no se vería.
+- **Mejora añadida:** `public/favicon.ico` (16, 32 y 48 px, generado a partir del SVG). Los navegadores piden `/favicon.ico` por su cuenta, y algunos sitios (marcadores, historial, accesos directos de Windows) no usan SVG.
+- **Para verlo hace falta fusionar en `main`.** Como cada rama sale de la anterior, el pull request #6 contiene todos los cambios pendientes desde el #1: fusionarlo publica todo de una vez. Decide el alumno (o Adriana, que es quien revisa según las normas): la IA no fusiona en `main`.
 
 **Pendiente de investigar por el alumno:** qué es un *favicon* y por qué SVG (gráficos vectoriales) se ve bien a cualquier tamaño.
 

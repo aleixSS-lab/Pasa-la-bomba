@@ -121,6 +121,7 @@ DevChallenge3/
 ├── public/
 │   ├── index.html
 │   ├── favicon.svg        icono de la pestaña del navegador (la bomba del juego, en SVG)
+│   ├── favicon.ico        el mismo icono en 16, 32 y 48 px, para navegadores y sitios que no usan SVG
 │   ├── css/style.css
 │   └── js/
 │       ├── i18n.js        todos los textos
