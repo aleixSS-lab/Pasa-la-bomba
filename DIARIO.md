@@ -31,7 +31,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 5 | 18-11 | Mejora de `CLAUDE.md`, diario y `README.md` | Detectado el fallo perdido de la sesión 3 |
 | 6 | 18-11 | El Codex de Adriana no encontraba las dependencias | No era incompatibilidad: un clon nuevo no trae `node_modules/`; documentado en `AGENTS.md` |
 | 7 | 18-11 | Publicar el juego gratis en internet | Vercel y Supabase descartados tras leer su documentación; publicado en Render desde el Chrome del alumno |
-| 8 | 18-11 | Subir a GitHub sin clics | Tarea programada que sube las ramas sola y GitHub Actions que abre los pull requests |
+| 8 | 18-11 | Subir a GitHub sin clics | El agente pregunta «¿Subo los cambios?» y, con el sí, una tarea de Windows los sube; GitHub Actions abre el pull request |
 
 ## 1. Herramientas de IA
 
@@ -58,7 +58,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Cambia el objetivo… mejórame las ideas» | Pasa la bomba; la IA añadió velocidad extra, inmunidad, parada al recibir y espectadores |
 | «No deja acceder a Adriana a mi local» | Lección: probar la red desde otro PC |
 | «Que los emoticonos sean tal cual lo que son» | Dibujos en canvas en vez de emojis |
-| «Que los agentes suban todo sin tener que darle clic a un .bat» | Tarea programada de Windows + GitHub Actions; el agente solo hace commit |
+| «Que los agentes suban todo sin tener que darle clic a un .bat» | El agente pregunta y, con el sí, deja una marca que una tarea de Windows convierte en `git push`; GitHub Actions abre el pull request |
 | «Mira a ver si nos vendría bien Vercel y Supabase» | La IA leyó su documentación y los descartó; propuso Render, que no obliga a cambiar el código |
 
 ## 4. Qué tuvo que investigar el alumno
@@ -447,4 +447,11 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 
 **Pendiente de investigar por el alumno:** qué es una tarea programada de Windows; qué es GitHub Actions y qué es un *workflow*; por qué el script no fuerza nunca un `push`.
 
-**Siguiente paso:** instalar la tarea programada (doble clic en `instalar-autosubida.bat`), activar la opción de GitHub Actions y comprobar que esta rama sube sola y se abre su pull request.
+**Cambio de diseño en la misma sesión, a petición del alumno.** La IA propuso una tarea que subía sola cada 2 minutos y pidió permiso para instalarla. El alumno respondió: «¿No se podría hacer una función para los agentes que te preguntara si queremos nosotros que subamos los cambios y directamente ahí subirlo a git?», y después: «pero también tendría que ser para el ordenador de Adriana». Resultado:
+
+- **El agente pregunta siempre** «¿Subo los cambios a GitHub?» al acabar. Con el «sí», si puede hacer `git push` lo hace; si no (Claude), crea el archivo `.subir-ahora`.
+- **La tarea programada ya no sube por su cuenta:** cada minuto mira si existe `.subir-ahora`; si no, ni siquiera abre PowerShell. Si existe, lo borra, sube y lo apunta en el log.
+- **Sirve en cualquier Windows:** `instalar-autosubida.bat` no tiene rutas fijas y se instala una vez en cada ordenador (Aleix y Adriana). Si el Codex de Adriana puede hacer `git push` por sí mismo, ni siquiera le hace falta. `AGENTS.md` también lo explica.
+- La IA lo había descartado al principio por más complicado; la idea del alumno da más control (nada se sube sin un «sí») con el mismo número de clics: ninguno.
+
+**Siguiente paso:** instalar la tarea en el portátil de Aleix (y en el de Adriana si su agente no puede hacer push), activar la opción de GitHub Actions y comprobar con un «sí» que esta rama sube y se abre su pull request.

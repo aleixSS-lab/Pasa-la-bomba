@@ -2,3 +2,4 @@ node_modules/
 *.log
 prueba.log
 subir.bat
+.subir-ahora

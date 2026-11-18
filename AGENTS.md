@@ -13,5 +13,5 @@ Lo imprescindible:
 - **Si has clonado el repositorio de cero**, `node_modules/` no viene incluido (está en `.gitignore`) y tu entorno puede no tener red: antes de `npm test`, pide al usuario que haga doble clic en `probar.bat` en esa misma carpeta y después lee `prueba.log`. Mejor aún: trabaja en la copia del repositorio que el usuario ya tiene instalada en vez de clonar otra.
 - **Una rama por cada cosa nueva**, creada desde `main` actualizado, con prefijo `view-`, `game-`, `net-`, `fix-`, `docs-` o `test-` (ver `CLAUDE.md` 6.3). Nunca trabajes en `main`.
 - Antes de commit y push: `npm test` y una entrada nueva al final de `DIARIO.md` con **Autor: Adriana** (o quien corresponda) y **Herramienta:** el agente y el modelo usados.
-- Sube la rama y abre un pull request a `main`. Lo fusiona el otro coautor; las ramas no se borran.
+- **Pregunta antes de subir:** «¿Subo los cambios a GitHub?». Con el «sí», haz `git push -u origin <rama>`; si tu entorno no puede, crea el archivo vacío `.subir-ahora` en la raíz y la tarea programada de Windows lo sube en un minuto (`CLAUDE.md` 6.3; se instala una vez por ordenador con `instalar-autosubida.bat`). El pull request a `main` lo abre GitHub Actions al llegar la rama. Lo fusiona el otro coautor; las ramas no se borran.
 - Si encuentras un fallo que no te han pedido arreglar, avisa y pregunta.

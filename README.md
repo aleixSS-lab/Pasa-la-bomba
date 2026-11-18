@@ -46,7 +46,7 @@ No hace falta para jugar (usa el enlace de arriba), pero sirve como plan B o par
 |---|---|
 | `probar.bat` | Instala las dependencias y ejecuta la prueba automática. Deja el resultado en `prueba.log`. |
 | `start.bat` | Arranca el servidor y, si está instalado `cloudflared`, el túnel para jugar por internet. Muestra la dirección que hay que compartir. |
-| `instalar-autosubida.bat` | Para quien desarrolla: instala una tarea programada que sube a GitHub cada 2 minutos las ramas con commits nuevos (nunca `main`). `quitar-autosubida.bat` la quita. |
+| `instalar-autosubida.bat` | Para quien desarrolla (una vez por ordenador): permite que los agentes de IA suban los cambios a GitHub cuando les dices que sí, sin clics. Nunca sube `main`. `quitar-autosubida.bat` lo quita. |
 
 ### Desde la terminal
 

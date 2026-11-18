@@ -95,9 +95,9 @@ DevChallenge3/
 ├── start.bat              arranca servidor + túnel y muestra la URL
 ├── probar.bat             instala dependencias, ejecuta la prueba y guarda prueba.log (ignorado por git)
 ├── subir.bat              sube a GitHub la rama actual con doble clic (local, ignorado por git; ahora es el plan B)
-├── autosubida.ps1         sube solas las ramas con commits nuevos (nunca main); lo lanza la tarea programada
-├── autosubida.vbs         lanza autosubida.ps1 sin abrir ventanas
-├── instalar-autosubida.bat / quitar-autosubida.bat   crean o quitan la tarea programada de Windows
+├── autosubida.ps1         sube las ramas con commits nuevos (nunca main) cuando existe .subir-ahora
+├── autosubida.vbs         lo lanza la tarea programada cada minuto, sin abrir ventanas
+├── instalar-autosubida.bat / quitar-autosubida.bat   crean o quitan la tarea programada en el Windows de cada coautor
 ├── .github/workflows/abrir-pull-request.yml   abre solo el pull request a main al subir una rama
 ├── server/
 │   ├── index.js           Express, Socket.IO, salas, sala de espera y API REST
@@ -195,11 +195,14 @@ Si algo no se ha podido probar, dilo claramente al usuario y anótalo en el diar
 - Flujo de cada rama:
   1. `git checkout main` y `git pull`, y después `git checkout -b <prefijo-nombre>`.
   2. Trabaja, prueba y haz commit en la rama. La entrada del diario de la sesión va en la misma rama.
-  3. **La subida es automática.** En el portátil de Aleix, la tarea programada `PasaLaBomba-autosubida` sube cada 2 minutos las ramas con commits nuevos, con la sesión de GitHub de Windows. No hace falta ningún clic. Si tu entorno puede hacer `git push -u origin <rama>` directamente (el Codex de Adriana), hazlo; no hace falta pedir permiso.
+  3. **Subida, siempre preguntando antes.** Al terminar la tarea, con el commit hecho y probado, pregunta al usuario: **«¿Subo los cambios a GitHub?»**. Si dice que no, no subas nada. Si dice que sí:
+     - Si tu entorno puede hacer `git push` (por ejemplo, Codex en el PC de Adriana con su sesión de GitHub), haz `git push -u origin <rama>` directamente.
+     - Si no puede (Claude en Cowork: su red no llega a GitHub), **crea un archivo vacío `.subir-ahora` en la raíz del proyecto**. La tarea programada `PasaLaBomba-autosubida` del Windows de ese coautor lo ve en menos de un minuto, sube las ramas con commits nuevos (nunca `main`, nunca forzado) con su sesión de GitHub y borra el archivo.
+     - Comprueba el resultado: el archivo `.subir-ahora` desaparece y `autosubida.log` dice «Subida <rama>». Si en dos minutos sigue ahí, la tarea no está instalada en ese ordenador: díselo al usuario y ofrécele instalarla con doble clic en `instalar-autosubida.bat` (una sola vez por ordenador) o usar `subir.bat`.
   4. Al llegar la rama a GitHub, **GitHub Actions abre el pull request a `main`** (`.github/workflows/abrir-pull-request.yml`), con la primera línea del último commit como título. El otro coautor lo revisa y lo fusiona. El agente nunca fusiona en `main` por su cuenta.
   5. Las ramas **no se borran** después de fusionarlas: sirven para la presentación.
-- **Consecuencia de la subida automática:** todo commit en una rama acaba en GitHub en dos minutos. Haz commit solo de trabajo probado; nunca hagas commit en `main` (la tarea no lo sube, pero se quedaría desincronizado).
-- **Comprueba que se ha subido** (unos 2 minutos después del commit): las últimas líneas de `autosubida.log` deben decir «Subida <rama>», y `git ls-remote` desde tu entorno, si lo tienes, debe mostrar el commit. Si el log dice AVISO o ERROR, explícaselo al alumno.
+- Nunca crees `.subir-ahora` sin el «sí» del usuario en esa misma conversación, y nunca hagas commit en `main`.
+- Si `autosubida.log` dice AVISO o ERROR, explícaselo al alumno. Si tienes forma, confirma también con `git ls-remote` que el commit está en GitHub.
 - Plan B si la tarea no está instalada o falla: `subir.bat`, que el agente puede lanzar con un doble clic si el alumno le da acceso al Explorador de archivos. Si no se abre el pull request automático, dale al alumno el título y una descripción de dos o tres líneas para pegarlos en GitHub.
 - Si hay conflicto con `main`, no lo resuelvas a ciegas: para y explica al usuario qué choca.
 - No des la sesión por subida sin haberlo comprobado con `git status -sb`.
@@ -277,7 +280,7 @@ https://pasa-la-bomba-0db0.onrender.com   el juego publicado (rama main)
 start.bat       plan B: arranca servidor y túnel en el portátil, y muestra la URL para compartir
 probar.bat      npm install + npm test con doble clic; deja el resultado en prueba.log
 subir.bat       plan B: sube a GitHub la rama en la que estés, con doble clic
-instalar-autosubida.bat   instala la subida automática cada 2 minutos (una sola vez)
+instalar-autosubida.bat   instala la subida bajo petición en ese ordenador (una vez por coautor)
 quitar-autosubida.bat     la quita
 ```
 
@@ -288,7 +291,7 @@ Aprendidas en las sesiones 1 a 5. Tenlas en cuenta antes de prometer nada:
 - **Sin acceso al registro de npm** (error 403). No puedes ejecutar `npm install`. Las dependencias ya están en `node_modules/`; si hace falta reinstalar, pide al alumno que haga doble clic en `probar.bat` y lee después `prueba.log`. Lo mismo en un clon nuevo del repositorio, que no trae `node_modules/` (está en `.gitignore`): le pasó al Codex de Adriana el 18-11. Mejor trabajar en la copia que el alumno ya tiene instalada.
 - **No puedes usar la terminal de Windows ni el escritorio del alumno** salvo que te dé acceso. Lo que tenga que ejecutarse en Windows (`start.bat`, `cloudflared`, el firewall) lo hace el alumno; dale los pasos exactos.
 - **Tu navegador de pruebas no puede conectarse por WebSocket a la IP de red local** (lo bloquea su proxy). Por `localhost` sí. La prueba desde otro PC la hace el alumno.
-- **GitHub:** no puedes crear repositorios ni invitar colaboradores. Desde la terminal del entorno de Claude, `git pull` y `git push` fallan (el proxy devuelve 403). Por eso existe la subida automática (sección 6.3): haz el commit en la rama y la tarea programada la sube. Lo que sigue sin poder hacerse es `git pull`: si el otro coautor ha fusionado algo, pide al alumno que haga `git pull` en Windows. Leer GitHub sí se puede (`git clone` o `git ls-remote` desde el entorno de Claude).
+- **GitHub:** no puedes crear repositorios ni invitar colaboradores. Desde la terminal del entorno de Claude, `git pull` y `git push` fallan (el proxy devuelve 403). Por eso existe la subida bajo petición (sección 6.3): haz el commit en la rama, pregunta y, con el «sí», crea `.subir-ahora`. Lo que sigue sin poder hacerse es `git pull`: si el otro coautor ha fusionado algo, pide al alumno que haga `git pull` en Windows. Leer GitHub sí se puede (`git clone` o `git ls-remote` desde el entorno de Claude).
 - **Git necesita permiso de borrado** en la carpeta (para sus archivos `.lock`). Pídelo con la herramienta de permisos antes del primer commit de la sesión.
 - **No cambies la configuración de seguridad de Windows** (firewall, antivirus) aunque tengas forma de hacerlo: explícale al alumno cómo hacerlo él.
 - **Navegadores (sesión 7).** La extensión Claude in Chrome **no funciona en Opera GX** (falla al crear el grupo de pestañas); en **Google Chrome** sí, con las sesiones del alumno. Los inicios de sesión, contraseñas y códigos los pone siempre el alumno. Las ventanas emergentes que abre una web (por ejemplo, la autorización de GitHub) quedan fuera del alcance del agente: pide al alumno que las complete.
