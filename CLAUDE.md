@@ -272,7 +272,7 @@ subir.bat       sube a GitHub la rama en la que estés, con doble clic
 
 Aprendidas en las sesiones 1 a 5. Tenlas en cuenta antes de prometer nada:
 
-- **Sin acceso al registro de npm** (error 403). No puedes ejecutar `npm install`. Las dependencias ya están en `node_modules/`; si hace falta reinstalar, pide al alumno que haga doble clic en `probar.bat` y lee después `prueba.log`.
+- **Sin acceso al registro de npm** (error 403). No puedes ejecutar `npm install`. Las dependencias ya están en `node_modules/`; si hace falta reinstalar, pide al alumno que haga doble clic en `probar.bat` y lee después `prueba.log`. Lo mismo en un clon nuevo del repositorio, que no trae `node_modules/` (está en `.gitignore`): le pasó al Codex de Adriana el 18-11. Mejor trabajar en la copia que el alumno ya tiene instalada.
 - **No puedes usar la terminal de Windows ni el escritorio del alumno** salvo que te dé acceso. Lo que tenga que ejecutarse en Windows (`start.bat`, `cloudflared`, el firewall) lo hace el alumno; dale los pasos exactos.
 - **Tu navegador de pruebas no puede conectarse por WebSocket a la IP de red local** (lo bloquea su proxy). Por `localhost` sí. La prueba desde otro PC la hace el alumno.
 - **GitHub:** no puedes crear repositorios ni invitar colaboradores. Desde la terminal del entorno de Claude, `git pull` y `git push` fallan (el proxy devuelve 403): haz el commit en la rama y pide al alumno que ejecute `subir.bat` y abra el pull request en la web (y que haga `git pull` en Windows si el otro coautor ha fusionado algo).

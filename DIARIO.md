@@ -8,7 +8,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 5, 18-11-2026.*
+*Última actualización: sesión 6, 18-11-2026.*
 
 ## Estado actual
 
@@ -28,6 +28,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 3 | 16-11 | La compañera no podía entrar | Causa encontrada (`localhost`); el arreglo del servidor se perdió |
 | 4 | 18-11 | Iconos dibujados de gadgets y bomba | La IA rehízo la trampa de oso al ver que no se reconocía |
 | 5 | 18-11 | Mejora de `CLAUDE.md`, diario y `README.md` | Detectado el fallo perdido de la sesión 3 |
+| 6 | 18-11 | El Codex de Adriana no encontraba las dependencias | No era incompatibilidad: un clon nuevo no trae `node_modules/`; documentado en `AGENTS.md` |
 
 ## 1. Herramientas de IA
 
@@ -328,3 +329,37 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 2. Hacer más visibles a los jugadores (pendiente de la sesión 4).
 3. Probar `start.bat` con el túnel.
 4. Subir la rama `docs-instrucciones` con `subir.bat`, abrir el pull request y que Adriana lo revise.
+
+## Sesión 6 — 2026-11-18 — Codex de Adriana sin dependencias en un clon nuevo
+
+**Autor:** Aleix.
+
+**Herramienta:** Claude (Claude Opus 5.5), con un subagente para el cambio de documentación.
+
+**Qué se pidió:**
+
+1. Aleix pegó el aviso del Codex de Adriana: «incompatibilidad de chatgpt de adriana». Codex había clonado el repositorio de cero en una carpeta nueva y `npm test` falló porque «no encuentra socket.io-client»; Codex paró y avisó, como mandan las normas.
+2. «si pero ejecuta el agente docs para ello».
+
+**Qué se hizo:**
+
+- Diagnóstico: no era una incompatibilidad entre Claude y Codex ni un fallo del código. `node_modules/` está en `.gitignore`, así que un clon nuevo no trae las dependencias, y el entorno de Codex no tiene red para `npm install`.
+- `AGENTS.md`: nuevo punto en «Lo imprescindible»: en un clon nuevo, pedir al usuario que ejecute `probar.bat` en esa carpeta y leer `prueba.log` antes de `npm test`; mejor trabajar en la copia ya instalada.
+- `CLAUDE.md`, sección 10: una frase con lo mismo en el punto del registro de npm.
+- Resumen del diario: línea de la sesión 6 en la tabla.
+- `npm test` en la copia de Aleix (con dependencias): todo correcto. Solo cambia documentación.
+
+**Decisiones y por qué:**
+
+- La IA propuso documentarlo en `AGENTS.md` (es lo que lee Codex) en vez de cambiar código; Aleix aceptó.
+- La IA decidió, sin consultarlo, añadir el cambio como un commit más en la rama `docs-instrucciones` en vez de abrir una rama nueva, porque esa rama aún no está fusionada y toca los mismos archivos: una rama aparte habría chocado con ella.
+- Solución para Adriana: doble clic en `probar.bat` en su clon, o que Codex trabaje en la copia que ella ya tiene instalada.
+
+**Qué falló y cómo se arregló:**
+
+- El primer mensaje hablaba de «incompatibilidad»; la causa real era la falta de dependencias en el clon. Las normas no avisaban de este caso; ahora sí.
+- No se ha podido comprobar desde el entorno de Claude que `probar.bat` funcione en la carpeta de Adriana: lo tiene que hacer ella.
+
+**Pendiente de investigar por el alumno:** por qué `node_modules/` no se sube a git y qué hacen `package-lock.json` y `npm install`.
+
+**Siguiente paso:** Adriana ejecuta `probar.bat` en su clon y Codex continúa con los mapas y la selección de sala.
