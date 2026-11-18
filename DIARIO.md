@@ -8,7 +8,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 8, 18-11-2026.*
+*Última actualización: sesión 9, 18-11-2026.*
 
 ## Estado actual
 
@@ -32,6 +32,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 6 | 18-11 | El Codex de Adriana no encontraba las dependencias | No era incompatibilidad: un clon nuevo no trae `node_modules/`; documentado en `AGENTS.md` |
 | 7 | 18-11 | Publicar el juego gratis en internet | Vercel y Supabase descartados tras leer su documentación; publicado en Render desde el Chrome del alumno |
 | 8 | 18-11 | Subir a GitHub sin clics | El agente pregunta «¿Subo los cambios?» y, con el sí, una tarea de Windows los sube; GitHub Actions abre el pull request |
+| 9 | 18-11 | Documentar siempre y aprovechar ramas | Lista de documentos que actualizar al terminar cada tarea; las ramas salen de la rama que se aprovecha |
 
 ## 1. Herramientas de IA
 
@@ -60,6 +61,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Que los emoticonos sean tal cual lo que son» | Dibujos en canvas en vez de emojis |
 | «Que los agentes suban todo sin tener que darle clic a un .bat» | El agente pregunta y, con el sí, deja una marca que una tarea de Windows convierte en `git push`; GitHub Actions abre el pull request |
 | «Mira a ver si nos vendría bien Vercel y Supabase» | La IA leyó su documentación y los descartó; propuso Render, que no obliga a cambiar el código |
+| «Antes de hacer nada, que lean el repositorio» y «si hay una rama que puedan aprovechar, que salgan de ella» | Varias conversaciones y dos agentes a la vez sin pisarse: cada uno lee lo nuevo y construye encima |
 
 ## 4. Qué tuvo que investigar el alumno
 
@@ -87,6 +89,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - **Trampa de oso irreconocible** → la IA lo vio en las capturas y la redibujó.
 - **El agente no puede hacer `git push`** (su red lo bloquea) → la subida la hace una tarea programada del portátil con la sesión de GitHub del alumno.
 - **El usuario pidió usar su Opera** → la extensión no funciona en Opera; se hizo desde Chrome.
+- **Una conversación de la IA trabajaba con copias viejas** de los documentos mientras otras conversaciones avanzaban → la norma de leer el repositorio antes de empezar lo detectó (sesión 9) y no se pisó nada.
 - **Lo que las pruebas automáticas no dicen:** si el juego es divertido o está equilibrado. Hace falta jugar con personas.
 
 ---
@@ -455,3 +458,37 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - La IA lo había descartado al principio por más complicado; la idea del alumno da más control (nada se sube sin un «sí») con el mismo número de clics: ninguno.
 
 **Siguiente paso:** instalar la tarea en el portátil de Aleix (y en el de Adriana si su agente no puede hacer push), activar la opción de GitHub Actions y comprobar con un «sí» que esta rama sube y se abre su pull request.
+
+---
+
+## Sesión 9 — 2026-11-18 — Documentar al terminar cada tarea y aprovechar las ramas de los demás
+
+**Autor:** Aleix.
+**Herramienta:** Claude en la aplicación de escritorio, modelo `claude-opus-5-5`. Es la misma conversación que la sesión 5; entre medias se hicieron las sesiones 6 a 8 en otras conversaciones.
+
+**Qué se pidió:** «¿Los agentes tienen asignado que cada vez que acaben de hacer algo actualicen la documentación? ¿Y que cada vez que vayan a hacer algo lean el repositorio en busca de cosas nuevas que puedan aprovechar? Si hay alguna rama que puedan aprovechar, la clonan y lo hacen desde allí».
+
+**Qué se hizo:**
+
+- **Respuesta a la pregunta: solo en parte.** El diario se escribía al cerrar la sesión y el `README` cuando cambiaba el arranque o la API, pero no había una lista para cada tarea. Al empezar, se leía el repositorio solo para no pisar al otro, no para aprovechar lo suyo, y las ramas salían siempre de `main`. En las sesiones 6 a 8 la IA ya partió de otras ramas, pero lo decidía cada vez, sin norma.
+- **`CLAUDE.md`:**
+  - Sección nueva **0 bis**: tabla de qué documento se actualiza al terminar cada tarea (diario y resumen siempre; `README`, `CLAUDE.md` y `AGENTS.md` según lo que cambie), antes de preguntar si se sube.
+  - Sección 0: al empezar, buscar en las ramas sin fusionar y en el diario lo que se pueda aprovechar.
+  - Sección 6.3: la rama sale de `main` o de la rama que se aprovecha. Si hay varias encadenadas, de la más avanzada; si se contradicen, se pregunta. Se apunta en el diario y en el pull request.
+- **`AGENTS.md`:** las dos normas resumidas para Codex.
+- **Esta sesión aplica la norma nueva:** la rama `docs-flujo-agentes` sale de `net-autosubida`, que ya contiene `docs-instrucciones` y `net-render`.
+
+**Decisiones y por qué:**
+
+- **«Clonar» se ha escrito como «salir de esa rama»** (decisión de la IA). Clonar es copiar el repositorio entero en otra carpeta, y eso ya dio problemas en la sesión 6 (un clon nuevo no trae las dependencias). Lo que pide el alumno se consigue en la misma copia con `git checkout -b <nueva> origin/<rama>`.
+- **Una entrada de diario por conversación**, ampliada con cada tarea, en vez de una entrada por tarea, para que el diario no se llene de entradas de una línea.
+- Las dos peticiones van en una sola rama `docs-`, porque tocan los mismos archivos.
+
+**Qué falló y cómo se arregló:**
+
+- **Esta conversación tenía copias viejas de los documentos.** Las sesiones 6 a 8 se hicieron en otras conversaciones mientras tanto. Al empezar, la IA revisó el repositorio, como pide la norma de la sesión 5, y encontró tres sesiones nuevas, dos ramas nuevas y la carpeta en otra rama. Volvió a leerlo todo antes de editar; si hubiera guardado sus copias, habría borrado las sesiones 6 a 8. Es la prueba de que la norma hacía falta.
+- `git fetch` sigue fallando desde el entorno de Claude, así que la revisión se hizo con lo que hay en el portátil. Si Adriana ha subido algo que el portátil aún no tiene, no se ha visto.
+
+**Pendiente de investigar por el alumno:** qué significa que una rama «sale de» otra; qué pasa con un pull request cuya rama sale de otra que todavía no se ha fusionado.
+
+**Siguiente paso:** fusionar en orden `docs-instrucciones`, `net-render`, `net-autosubida` y esta; arreglar `/api/lan` si se pide.

@@ -11,12 +11,27 @@ Este archivo lo debe leer cualquier agente de IA antes de tocar el proyecto (Cla
 1. **Ponte al día con el repositorio antes de hacer nada nuevo.** Los dos coautores trabajan a la vez con agentes distintos, así que puede haber cambios que no conoces:
    - `git fetch --all` y `git pull` en `main`.
    - `git log --oneline main -10` y `git branch -a`: mira qué se ha fusionado y qué ramas nuevas hay del otro coautor.
-   - Si hay pull requests abiertos o ramas sin fusionar que tocan lo mismo que te piden, avisa al usuario antes de empezar, para no pisar el trabajo del otro.
+   - **Busca qué puedes aprovechar.** Revisa las ramas sin fusionar (`git log --oneline main..origin/<rama>` y `git diff --stat main...origin/<rama>`) y las últimas entradas del diario: código, normas, scripts o arreglos que sirvan para lo que te piden, o que toquen los mismos archivos. Si los hay, tu rama sale de esa rama y no de `main` (sección 6.3). Dile al usuario en una línea qué has encontrado y de qué rama partes.
+   - Si alguien está haciendo justo lo mismo que te piden, no lo dupliques: avisa y pregunta antes de empezar.
    - Si no puedes conectar con GitHub (sección 10), no supongas que estás al día: pide al alumno que haga `git pull` antes de seguir y díselo con esas palabras.
 2. Lee este archivo entero (puede haber cambiado con lo que acabas de traer) y el **resumen** y la **última entrada** de `DIARIO.md`, que dicen en qué punto está el proyecto y qué quedó pendiente.
-3. Ejecuta `git status`. Si hay cambios sin commit de una sesión anterior, avisa al usuario antes de tocar nada. Después crea la rama de la tarea a partir de `main` actualizado (sección 6.3).
+3. Ejecuta `git status`. Si hay cambios sin commit de una sesión anterior, avisa al usuario antes de tocar nada. Después crea la rama de la tarea a partir de `main` actualizado o de la rama que vayas a aprovechar (sección 6.3).
 4. Ejecuta `npm test` para partir de un estado que funciona. Si falla, díselo al usuario antes de empezar lo que te pida.
 5. Lee la sección 10 (limitaciones del entorno de la IA) para no prometer cosas que no puedes hacer.
+
+## 0 bis. Al terminar cada tarea: actualizar la documentación
+
+Una tarea no está acabada hasta que la documentación dice lo mismo que el código. Cada vez que termines algo, antes de preguntar «¿Subo los cambios a GitHub?», repasa esta lista y actualiza en la misma rama y el mismo commit lo que toque:
+
+| Archivo | Cuándo | Qué |
+|---|---|---|
+| `DIARIO.md`, entrada de la sesión | **Siempre** | Añade la entrada de la sesión (sección 7). Si en la misma conversación haces varias tareas, amplía esa misma entrada con cada prompt nuevo; no hace falta una sesión por tarea. |
+| `DIARIO.md`, resumen de arriba | **Siempre** | Estado actual, la línea de la sesión en la tabla y, si los hay, prompts clave nuevos, conceptos para investigar y fallos. |
+| `README.md` | Si cambia cómo se arranca o se publica, las reglas, los controles, la API o la URL | Lo que vería alguien que llega al repositorio (sección 7 bis). |
+| `CLAUDE.md` | Si cambian normas, estructura de archivos, eventos, endpoints, valores de `config.js`, el stack, las fases o descubres una limitación nueva | La sección correspondiente. En las fases, marca lo hecho y añade los pendientes nuevos. |
+| `AGENTS.md` | Si cambia algo de lo que hay en su lista «Lo imprescindible» | Que Codex se entere sin tener que leerlo todo. |
+
+Al acabar, dile al usuario en una línea qué documentos has actualizado. Si alguno no se ha podido actualizar, dilo.
 
 ## 1. Qué es el proyecto
 
@@ -193,8 +208,12 @@ Si algo no se ha podido probar, dilo claramente al usuario y anótalo en el diar
 - Nombre: prefijo + dos o tres palabras en castellano, en minúsculas, sin tildes y separadas por guiones.
 - Si una petición mezcla temas, usa el prefijo de lo principal. Si son dos cosas independientes, dos ramas.
 - Flujo de cada rama:
-  1. `git checkout main` y `git pull`, y después `git checkout -b <prefijo-nombre>`.
-  2. Trabaja, prueba y haz commit en la rama. La entrada del diario de la sesión va en la misma rama.
+  1. **Elige de dónde parte la rama:**
+     - Por defecto, de `main` actualizado: `git checkout main`, `git pull` y `git checkout -b <prefijo-nombre>`.
+     - **Si una rama sin fusionar tiene algo que te sirve o toca los mismos archivos** (el diario casi siempre), parte de ella: `git checkout -b <prefijo-nombre> origin/<esa-rama>`. No clones el repositorio otra vez: trabaja en la copia que ya tiene el alumno y crea tu rama encima de la otra. Así aprovechas su trabajo y evitas conflictos.
+     - Si varias ramas encadenadas sirven, parte de la más avanzada, la que ya contiene a las demás (`git log --graph --oneline --all`). Si son ramas separadas que se contradicen, pregunta al usuario cuál usar.
+     - Si partes de otra rama, apúntalo en el diario y en la descripción del pull request («sale de `<rama>`: fusionar después de ella»), porque tu pull request incluirá también sus commits hasta que esa se fusione.
+  2. Trabaja, prueba, **actualiza la documentación (sección 0 bis)** y haz commit en la rama.
   3. **Subida, siempre preguntando antes.** Al terminar la tarea, con el commit hecho y probado, pregunta al usuario: **«¿Subo los cambios a GitHub?»**. Si dice que no, no subas nada. Si dice que sí:
      - Si tu entorno puede hacer `git push` (por ejemplo, Codex en el PC de Adriana con su sesión de GitHub), haz `git push -u origin <rama>` directamente.
      - Si no puede (Claude en Cowork: su red no llega a GitHub), **crea un archivo vacío `.subir-ahora` en la raíz del proyecto**. La tarea programada `PasaLaBomba-autosubida` del Windows de ese coautor lo ve en menos de un minuto, sube las ramas con commits nuevos (nunca `main`, nunca forzado) con su sesión de GitHub y borra el archivo.
