@@ -9,7 +9,7 @@ Este archivo lo debe leer cualquier agente de IA antes de tocar el proyecto (Cla
 ## 0. Antes de empezar cualquier sesión
 
 1. Lee este archivo entero y el **resumen** y la **última entrada** de `DIARIO.md`, que dicen en qué punto está el proyecto y qué quedó pendiente.
-2. Ejecuta `git pull`, `git status` y `git log --oneline -5`. El otro coautor puede haber subido cambios. Si hay cambios sin commit de una sesión anterior, avisa al usuario antes de tocar nada.
+2. Ejecuta `git status`, `git branch -a` y `git log --oneline -5`. Si hay cambios sin commit de una sesión anterior, avisa al usuario antes de tocar nada. Después crea la rama de la tarea a partir de `main` actualizado (sección 6.3).
 3. Ejecuta `npm test` para partir de un estado que funciona. Si falla, díselo al usuario antes de empezar lo que te pida.
 4. Lee la sección 10 (limitaciones del entorno de la IA) para no prometer cosas que no puedes hacer.
 
@@ -85,7 +85,7 @@ DevChallenge3/
 ├── package.json
 ├── start.bat              arranca servidor + túnel y muestra la URL
 ├── probar.bat             instala dependencias, ejecuta la prueba y guarda prueba.log (ignorado por git)
-├── subir.bat              git push a GitHub con doble clic (local, ignorado por git)
+├── subir.bat              sube a GitHub la rama actual con doble clic (local, ignorado por git)
 ├── server/
 │   ├── index.js           Express, Socket.IO, salas, sala de espera y API REST
 │   ├── config.js          valores ajustables del juego (tiempos, velocidades, gadgets)
@@ -161,13 +161,33 @@ Si algo no se ha podido probar, dilo claramente al usuario y anótalo en el diar
 ### 6.3 Git
 
 - Repositorio público en GitHub: `aleixSS-lab/pasa-la-bomba`, rama `main`. `node_modules/`, los `.log` y `subir.bat` van en `.gitignore`.
-- Un commit al cerrar cada sesión o cambio importante, solo después de probar. El commit incluye la entrada del diario de esa sesión.
+- Un commit al cerrar cada sesión o cambio importante, solo después de probar.
 - Mensajes en castellano: una primera línea corta que diga qué cambia y, si hace falta, un párrafo con el porqué.
 - Autor de los commits: la dirección anónima de GitHub del alumno (`…@users.noreply.github.com`). Nunca su correo personal: el repositorio es público.
-- No reescribas el historial.
-- **Al cerrar cada sesión, haz commit y push** a `origin main`, después de probar y con la entrada del diario incluida. No hace falta pedir permiso para esto.
-- Antes del commit, `git pull` para traer lo que haya subido el otro coautor. Si hay conflicto, no lo resuelvas a ciegas: para y explica al usuario qué choca.
-- Si el push falla (sin credenciales, sin red), dilo y pide al alumno que ejecute `subir.bat`. No des la sesión por subida sin haberlo comprobado con `git status -sb`.
+- No reescribas el historial de nada que ya esté subido.
+
+**Una rama por cada cosa nueva.** Nunca se trabaja directamente en `main`.
+
+| Prefijo | Para qué | Ejemplo |
+|---|---|---|
+| `view-` | aspecto visual, interfaz, accesibilidad | `view-jugadores-visibles` |
+| `game-` | reglas y jugabilidad, valores de `config.js` | `game-equilibrio-bomba` |
+| `net-` | red, servidor, salas, túnel, endpoints | `net-tunel-cloudflare` |
+| `fix-` | arreglar un fallo | `fix-api-lan` |
+| `docs-` | `DIARIO.md`, `README.md`, `CLAUDE.md`, `AGENTS.md` | `docs-instrucciones` |
+| `test-` | pruebas automáticas | `test-gadgets` |
+
+- Nombre: prefijo + dos o tres palabras en castellano, en minúsculas, sin tildes y separadas por guiones.
+- Si una petición mezcla temas, usa el prefijo de lo principal. Si son dos cosas independientes, dos ramas.
+- Flujo de cada rama:
+  1. `git checkout main` y `git pull`, y después `git checkout -b <prefijo-nombre>`.
+  2. Trabaja, prueba y haz commit en la rama. La entrada del diario de la sesión va en la misma rama.
+  3. Al cerrar la sesión, `git push -u origin <rama>`. No hace falta pedir permiso para esto.
+  4. Se abre un **pull request** a `main` en GitHub. El otro coautor lo revisa y lo fusiona. El agente nunca fusiona en `main` por su cuenta.
+  5. Las ramas **no se borran** después de fusionarlas: sirven para la presentación.
+- Si el push falla (sin credenciales, sin red), dilo y pide al alumno que ejecute `subir.bat`, que sube la rama en la que esté. Si no puedes abrir el pull request, dale al alumno el título y una descripción de dos o tres líneas para pegarlos en GitHub.
+- Si hay conflicto con `main`, no lo resuelvas a ciegas: para y explica al usuario qué choca.
+- No des la sesión por subida sin haberlo comprobado con `git status -sb`.
 
 ### 6.4 Accesibilidad obligatoria
 
@@ -240,7 +260,7 @@ npm start       arranca el servidor en http://localhost:3000
 npm test        comprueba las reglas y simula una partida completa (tarda unos 10 segundos)
 start.bat       arranca servidor y túnel, y muestra la URL para compartir
 probar.bat      npm install + npm test con doble clic; deja el resultado en prueba.log
-subir.bat       git push a GitHub con doble clic
+subir.bat       sube a GitHub la rama en la que estés, con doble clic
 ```
 
 ## 10. Limitaciones del entorno de la IA
@@ -250,7 +270,7 @@ Aprendidas en las sesiones 1 a 5. Tenlas en cuenta antes de prometer nada:
 - **Sin acceso al registro de npm** (error 403). No puedes ejecutar `npm install`. Las dependencias ya están en `node_modules/`; si hace falta reinstalar, pide al alumno que haga doble clic en `probar.bat` y lee después `prueba.log`.
 - **No puedes usar la terminal de Windows ni el escritorio del alumno** salvo que te dé acceso. Lo que tenga que ejecutarse en Windows (`start.bat`, `cloudflared`, el firewall) lo hace el alumno; dale los pasos exactos.
 - **Tu navegador de pruebas no puede conectarse por WebSocket a la IP de red local** (lo bloquea su proxy). Por `localhost` sí. La prueba desde otro PC la hace el alumno.
-- **GitHub:** no puedes crear repositorios ni invitar colaboradores. Desde la terminal del entorno de Claude, `git pull` y `git push` fallan (el proxy devuelve 403): haz el commit y pide al alumno que ejecute `subir.bat` (y que haga `git pull` en Windows si el otro coautor ha subido algo).
+- **GitHub:** no puedes crear repositorios ni invitar colaboradores. Desde la terminal del entorno de Claude, `git pull` y `git push` fallan (el proxy devuelve 403): haz el commit en la rama y pide al alumno que ejecute `subir.bat` y abra el pull request en la web (y que haga `git pull` en Windows si el otro coautor ha fusionado algo).
 - **Git necesita permiso de borrado** en la carpeta (para sus archivos `.lock`). Pídelo con la herramienta de permisos antes del primer commit de la sesión.
 - **No cambies la configuración de seguridad de Windows** (firewall, antivirus) aunque tengas forma de hacerlo: explícale al alumno cómo hacerlo él.
 - Si encuentras otra limitación, dila al usuario y añádela aquí y en el diario.

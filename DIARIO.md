@@ -65,7 +65,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Endpoint REST (`GET /api/games/:id`).
 - Detección de choques (distancia entre centros) y *flood fill* para el mapa.
 - Canvas 2D (`arc`, `lineTo`, `fill`) e imágenes `data:`.
-- Git: remoto, `commit` frente a `push`.
+- Git: remoto, `commit` frente a `push`, ramas y pull requests.
 
 ## 5. Qué no funcionó a la primera
 
@@ -278,6 +278,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 
 1. «Vamos a mejorar las instrucciones, tanto claude.md, diario.md y el readme.md».
 2. «Hazme las preguntas para mejorar la precisión de los próximos modelos».
+3. «Por cada cosa nueva me gustaría que se hiciera una rama nueva […] si es de aspecto visual sería view-…».
 
 **Qué se hizo:**
 
@@ -299,6 +300,12 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
   - *Respuestas breves con «para investigar»* → norma de cómo responder.
   - *Solo PC con teclado; habrá versión web y `.exe`* → el `.exe` queda como idea sin decidir (no se sabe si solo arranca el servidor o es el juego entero) y necesitará permiso para añadir una herramienta de empaquetado.
   - *Entrega en unas dos semanas* → fecha aproximada en `CLAUDE.md` y en el resumen.
+- **Tercer prompt:** «Por cada cosa nueva me gustaría que se hiciera una rama nueva, por ejemplo, si es de aspecto visual sería view-…». La IA propuso seis prefijos y preguntó cómo se fusionan las ramas:
+  - Prefijos `view-`, `game-`, `net-`, `fix-`, `docs-` y `test-`.
+  - Cada rama llega a `main` con un **pull request** que revisa y fusiona el otro coautor. El agente no fusiona nunca.
+  - Las ramas no se borran, para enseñar el historial en la presentación.
+  - Los dos primeros commits de esta sesión ya estaban en `main` (el alumno los subió con `subir.bat`) y no se mueven, porque no se reescribe lo que ya está subido. Este último cambio es el primero que va en una rama: `docs-instrucciones`.
+  - `subir.bat` ahora sube la rama actual en vez de `main` siempre.
 
 **Decisiones y por qué:**
 
@@ -318,4 +325,4 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 1. Añadir `GET /api/lan` al servidor y comprobarlo desde el PC de Adriana.
 2. Hacer más visibles a los jugadores (pendiente de la sesión 4).
 3. Probar `start.bat` con el túnel.
-4. Subir los commits a GitHub.
+4. Subir la rama `docs-instrucciones` con `subir.bat`, abrir el pull request y que Adriana lo revise.
