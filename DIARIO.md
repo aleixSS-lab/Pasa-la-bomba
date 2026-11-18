@@ -155,3 +155,35 @@ Registro de cómo se ha construido el juego con agentes de IA. Cada sesión aña
 **Pendiente de investigar por el alumno:** qué es `localhost` y por qué cada ordenador tiene el suyo; qué es una IP de red local; qué hace un firewall.
 
 **Siguiente paso:** probar de nuevo con Adriana; si sigue sin entrar, revisar el firewall y, si la red del centro lo bloquea, pasar al túnel.
+
+---
+
+## Sesión 4 — 2026-11-18 — Iconos que se reconocen: trampa, chicle, acelerador y bomba
+
+**Herramienta:** Claude en modo Cowork, modelo configurado `claude-opus-5-5`.
+
+**Qué se pidió:** «Vamos a hacer que los modelos sean más visibles, primero los emoticonos, que sean tal cual lo que son».
+
+**Qué se hizo:**
+
+- Los gadgets dejaron de ser símbolos de texto (×, ≈, ») y pasaron a ser dibujos de lo que son:
+  - **Trampa de oso:** dos mandíbulas con dientes, placa central y muelles a los lados.
+  - **Chicle:** mancha rosa con brillo y una pompa.
+  - **Acelerador:** plataforma verde con un rayo.
+  - **Bomba:** esfera negra con brillo, mecha y chispa.
+- Los mismos dibujos se usan en el mapa, debajo del jugador mientras dura el efecto, en el marcador (la bomba junto al portador), en la leyenda de la partida y en las instrucciones de la pantalla de inicio, cada uno con su nombre.
+
+**Decisiones y por qué:**
+
+- **Dibujos hechos con código en el canvas, no emojis.** Los emojis cambian de aspecto según el sistema operativo y el navegador, y no existe un emoji de trampa de oso (🪤 es una ratonera) ni de chicle. Así se ven igual en todos los PC.
+- **Una sola función por icono.** Sirve para el mapa y, convertida en imagen, para la leyenda; si se retoca un dibujo, cambia en todas partes.
+- **Accesibilidad:** cada icono tiene forma y color propios y siempre aparece con su nombre al lado; el borde blanco de la bomba la separa del suelo oscuro.
+
+**Qué falló y cómo se arregló:**
+
+- **La primera trampa de oso no se reconocía.** Era un aro con dientes alrededor y parecía una sierra o un ventilador. La IA lo detectó al revisar las capturas ampliadas, sin que el alumno lo dijera. Se rehízo con lo que identifica a una trampa de verdad (dos mandíbulas separadas y los muelles a los lados) y se dibujó algo más grande en el mapa porque se veía más pequeña que el resto.
+- Prueba automática: correcta (no cambia la lógica, solo el dibujo).
+
+**Pendiente de investigar por el alumno:** cómo se dibuja con la API Canvas 2D (`arc`, `lineTo`, `fill`, `stroke`) y qué es una imagen `data:` (`toDataURL`).
+
+**Siguiente paso:** hacer más visibles los jugadores (la segunda parte de la petición), probar con Adriana y subir los commits pendientes.

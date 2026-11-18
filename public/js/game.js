@@ -6,12 +6,8 @@ const Game = (() => {
   // Cada jugador tiene un color y además una forma distinta (no depender solo del color).
   const COLORS = ['#ff6b6b', '#4dabf7', '#69db7c', '#f783ac', '#da77f2', '#ff922b', '#38d9a9', '#f1f3f5'];
   const SYMBOLS = ['●', '■', '▲', '◆', '★', '⬢', '✚', '⬟'];
-  // Cada gadget tiene un color y un símbolo propios. Las letras t, g, b son las que envía el servidor.
-  const GADGETS = {
-    trap: { color: '#ff8787', glyph: '×', fx: 't' },
-    gum: { color: '#faa2c1', glyph: '≈', fx: 'g' },
-    boost: { color: '#8ce99a', glyph: '»', fx: 'b' },
-  };
+  // Efectos activos que envía el servidor para cada jugador: t = trampa, g = chicle, b = acelerador.
+  const EFFECTS = { t: 'trap', g: 'gum', b: 'boost' };
   const FLOOR = '#1b2033';
   const WALL = '#6b7fc4';
   const WALL_EDGE = '#8fa0dd';
@@ -168,22 +164,15 @@ const Game = (() => {
       }
     }
 
-    // Gadgets: baldosa oscura con borde de color y un símbolo.
+    // Gadgets: cada uno dibujado como lo que es, sobre una sombra para que destaque del suelo.
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = 'bold 22px system-ui, sans-serif';
     for (const g of gadgets.values()) {
-      const style = GADGETS[g.type];
-      const r = map.gadgetRadius;
-      ctx.fillStyle = DARK;
-      ctx.strokeStyle = style.color;
-      ctx.lineWidth = 3;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
       ctx.beginPath();
-      ctx.rect(g.x - r, g.y - r, r * 2, r * 2);
+      ctx.ellipse(g.x + 2, g.y + 4, map.gadgetRadius * (g.type === 'trap' ? 1.6 : 1.15), map.gadgetRadius * 0.9, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = style.color;
-      ctx.fillText(style.glyph, g.x, g.y + 1);
+      drawIcon(ctx, g.type, g.x, g.y, map.gadgetRadius * (g.type === 'trap' ? 1.3 : 1.2));
     }
 
     for (const p of players.values()) {
@@ -202,14 +191,13 @@ const Game = (() => {
       ctx.lineWidth = p.id === myId ? 3 : 1.5;
       ctx.strokeStyle = p.id === myId ? '#ffffff' : DARK;
       ctx.stroke();
-      if (hasBomb) drawBomb(p.drawX + map.radius + 20, p.drawY + 4);
+      if (hasBomb) drawIcon(ctx, 'bomb', p.drawX + map.radius + 16, p.drawY + 2, 12);
 
-      // Apodo encima y efectos activos debajo.
+      // Apodo encima y efectos activos debajo, con el mismo dibujo que el gadget.
       ctx.font = 'bold 14px system-ui, sans-serif';
       label(p.name, p.drawX, p.drawY - map.radius - 14, '#ffffff');
-      const fx = Object.values(GADGETS).filter((g) => p.fx.includes(g.fx));
-      ctx.font = 'bold 18px system-ui, sans-serif';
-      fx.forEach((g, i) => label(g.glyph, p.drawX + (i - (fx.length - 1) / 2) * 16, p.drawY + map.radius + 14, g.color));
+      const fx = [...p.fx].map((letter) => EFFECTS[letter]).filter(Boolean);
+      fx.forEach((type, i) => drawIcon(ctx, type, p.drawX + (i - (fx.length - 1) / 2) * 20, p.drawY + map.radius + 13, 8));
     }
 
     // Explosiones: un anillo que crece durante medio segundo.
@@ -235,22 +223,189 @@ const Game = (() => {
     ctx.fillText(text, x, y);
   }
 
-  function drawBomb(x, y) {
-    ctx.strokeStyle = '#f1f3f5';
-    ctx.lineWidth = 2;
-    ctx.beginPath();        // mecha
-    ctx.moveTo(x + 4, y - 6);
-    ctx.lineTo(x + 9, y - 12);
-    ctx.stroke();
-    ctx.fillStyle = '#14161f';
-    ctx.beginPath();        // cuerpo
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#ffd43b';
-    ctx.beginPath();        // chispa
-    ctx.arc(x + 10, y - 13, 3.5, 0, Math.PI * 2);
-    ctx.fill();
+  // ---------- Iconos: trampa de oso, chicle, acelerador y bomba ----------
+  // Se dibujan con formas, no con emojis, para que se vean igual en todos los ordenadores.
+  // (x, y) es el centro y s el radio aproximado del dibujo.
+
+  function circle(c, x, y, r) {
+    c.beginPath();
+    c.arc(x, y, r, 0, Math.PI * 2);
+  }
+
+  // Trampa de oso abierta vista desde arriba: dos mandíbulas con dientes, placa en el centro
+  // y los muelles a los lados, que es lo que la distingue a simple vista.
+  function drawTrap(c, x, y, s) {
+    c.lineJoin = 'round';
+    c.lineCap = 'round';
+    for (const side of [-1, 1]) {                 // muelles en zigzag
+      c.beginPath();
+      for (let i = 0; i <= 6; i++) {
+        const px = x + side * (s * 0.62 + i * s * 0.1);
+        const py = y + (i % 2 ? -1 : 1) * s * 0.2;
+        c[i ? 'lineTo' : 'moveTo'](px, i === 0 || i === 6 ? y : py);
+      }
+      c.strokeStyle = DARK;
+      c.lineWidth = s * 0.26;
+      c.stroke();
+      c.strokeStyle = '#adb5bd';
+      c.lineWidth = s * 0.12;
+      c.stroke();
+    }
+    circle(c, x, y, s * 0.24);                    // placa que dispara la trampa
+    c.fillStyle = '#868e96';
+    c.fill();
+    c.strokeStyle = DARK;
+    c.lineWidth = s * 0.08;
+    c.stroke();
+    // Mandíbulas: arriba y abajo, con un hueco a cada lado donde van los muelles.
+    for (const [a0, a1] of [[Math.PI + 0.45, Math.PI * 2 - 0.45], [0.45, Math.PI - 0.45]]) {
+      c.beginPath();
+      c.arc(x, y, s * 0.62, a0, a1);
+      c.strokeStyle = DARK;
+      c.lineWidth = s * 0.3;
+      c.stroke();
+      c.strokeStyle = '#ced4da';
+      c.lineWidth = s * 0.16;
+      c.stroke();
+      // Dientes hacia el centro.
+      const teeth = 5;
+      for (let i = 0; i < teeth; i++) {
+        const a = a0 + ((i + 0.5) * (a1 - a0)) / teeth;
+        const w = (a1 - a0) / teeth / 2;
+        c.beginPath();
+        c.moveTo(x + Math.cos(a - w) * s * 0.55, y + Math.sin(a - w) * s * 0.55);
+        c.lineTo(x + Math.cos(a) * s * 0.3, y + Math.sin(a) * s * 0.3);
+        c.lineTo(x + Math.cos(a + w) * s * 0.55, y + Math.sin(a + w) * s * 0.55);
+        c.closePath();
+        c.fillStyle = '#f1f3f5';
+        c.fill();
+        c.strokeStyle = DARK;
+        c.lineWidth = s * 0.05;
+        c.stroke();
+      }
+    }
+    for (const side of [-1, 1]) {                 // bisagras
+      circle(c, x + side * s * 0.62, y, s * 0.12);
+      c.fillStyle = '#495057';
+      c.fill();
+      c.strokeStyle = DARK;
+      c.lineWidth = s * 0.06;
+      c.stroke();
+    }
+  }
+
+  // Chicle masticado: mancha rosa con una pompa.
+  function drawGum(c, x, y, s) {
+    const blobs = [[-0.3, 0.15, 0.55], [0.28, 0.25, 0.5], [0, -0.15, 0.58], [-0.05, 0.42, 0.42]];
+    c.fillStyle = '#a61e4d';                      // contorno: los mismos círculos un poco más grandes
+    for (const [dx, dy, r] of blobs) { circle(c, x + dx * s, y + dy * s, r * s + s * 0.12); c.fill(); }
+    c.fillStyle = '#f783ac';
+    for (const [dx, dy, r] of blobs) { circle(c, x + dx * s, y + dy * s, r * s); c.fill(); }
+    c.fillStyle = 'rgba(255, 255, 255, 0.55)';    // brillo
+    c.beginPath();
+    c.ellipse(x - s * 0.2, y - s * 0.32, s * 0.22, s * 0.12, -0.5, 0, Math.PI * 2);
+    c.fill();
+    circle(c, x + s * 0.55, y - s * 0.55, s * 0.32);  // pompa
+    c.fillStyle = '#fcc2d7';
+    c.fill();
+    c.strokeStyle = '#a61e4d';
+    c.lineWidth = s * 0.1;
+    c.stroke();
+  }
+
+  // Acelerador: plataforma verde con un rayo.
+  function drawBoost(c, x, y, s) {
+    circle(c, x, y, s * 0.95);
+    c.fillStyle = '#2b8a3e';
+    c.fill();
+    c.strokeStyle = DARK;
+    c.lineWidth = s * 0.12;
+    c.stroke();
+    circle(c, x, y, s * 0.78);
+    c.strokeStyle = '#8ce99a';
+    c.lineWidth = s * 0.1;
+    c.stroke();
+    const k = s * 0.72;
+    const bolt = [[0.18, -1], [-0.55, 0.12], [-0.05, 0.12], [-0.2, 1], [0.55, -0.16], [0.05, -0.16]];
+    c.beginPath();
+    bolt.forEach(([px, py], i) => c[i ? 'lineTo' : 'moveTo'](x + px * k, y + py * k));
+    c.closePath();
+    c.fillStyle = '#ffd43b';
+    c.fill();
+    c.strokeStyle = DARK;
+    c.lineWidth = s * 0.08;
+    c.lineJoin = 'round';
+    c.stroke();
+  }
+
+  // Bomba clásica: esfera negra con borde claro, boquilla, mecha y chispa.
+  function drawBombIcon(c, x, y, s) {
+    const bx = x - s * 0.1;
+    const by = y + s * 0.15;
+    c.save();                                     // boquilla, inclinada hacia arriba a la derecha
+    c.translate(bx + s * 0.5, by - s * 0.5);
+    c.rotate(Math.PI / 4);
+    c.fillStyle = '#868e96';
+    c.strokeStyle = '#f1f3f5';
+    c.lineWidth = s * 0.08;
+    c.beginPath();
+    c.rect(-s * 0.22, -s * 0.18, s * 0.44, s * 0.36);
+    c.fill();
+    c.stroke();
+    c.restore();
+    circle(c, bx, by, s * 0.75);                  // cuerpo
+    c.fillStyle = '#212529';
+    c.fill();
+    c.strokeStyle = '#f1f3f5';
+    c.lineWidth = s * 0.12;
+    c.stroke();
+    c.fillStyle = 'rgba(255, 255, 255, 0.35)';    // brillo
+    c.beginPath();
+    c.ellipse(bx - s * 0.28, by - s * 0.3, s * 0.2, s * 0.12, -0.7, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = '#e9d8a6';                    // mecha
+    c.lineWidth = s * 0.12;
+    c.lineCap = 'round';
+    c.beginPath();
+    c.moveTo(bx + s * 0.68, by - s * 0.68);
+    c.quadraticCurveTo(bx + s * 0.75, by - s * 1.1, bx + s * 1.0, by - s * 1.05);
+    c.stroke();
+    c.lineCap = 'butt';
+    const sx = bx + s * 1.05;                     // chispa en forma de estrella
+    const sy = by - s * 1.08;
+    c.beginPath();
+    for (let i = 0; i < 16; i++) {
+      const a = (i * Math.PI) / 8;
+      const r = i % 2 ? s * 0.14 : s * 0.38;
+      c[i ? 'lineTo' : 'moveTo'](sx + Math.cos(a) * r, sy + Math.sin(a) * r);
+    }
+    c.closePath();
+    c.fillStyle = '#ff922b';
+    c.fill();
+    circle(c, sx, sy, s * 0.13);
+    c.fillStyle = '#fff3bf';
+    c.fill();
+  }
+
+  const ICONS = { trap: drawTrap, gum: drawGum, boost: drawBoost, bomb: drawBombIcon };
+
+  function drawIcon(c, type, x, y, s) {
+    c.save();
+    ICONS[type](c, x, y, s);
+    c.restore();
+  }
+
+  // El mismo dibujo como imagen, para usarlo en la leyenda y en las instrucciones.
+  const iconCache = {};
+  function iconURL(type) {
+    if (!iconCache[type]) {
+      const off = document.createElement('canvas');
+      off.width = 64;
+      off.height = 64;
+      drawIcon(off.getContext('2d'), type, 32, type === 'bomb' ? 36 : 32, type === 'trap' ? 22 : 24);
+      iconCache[type] = off.toDataURL();
+    }
+    return iconCache[type];
   }
 
   // Forma de cada jugador según su índice.
@@ -342,5 +497,5 @@ const Game = (() => {
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-  return { start, stop, onState, onEvent, isSpectator, COLORS, SYMBOLS };
+  return { start, stop, onState, onEvent, isSpectator, iconURL, COLORS, SYMBOLS };
 })();

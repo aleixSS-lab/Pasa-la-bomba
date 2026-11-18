@@ -143,7 +143,7 @@ Si algo no se ha podido probar, dilo claramente al usuario. No afirmes que funci
 
 Todo cambio de interfaz debe cumplir estos cinco puntos:
 
-- **No depender solo del color.** Cada jugador se distingue por color y además por forma, y su apodo es visible. Lo mismo los gadgets (color y símbolo) y la bomba (anillo, icono y texto en el marcador).
+- **No depender solo del color.** Cada jugador se distingue por color y además por forma, y su apodo es visible. Los gadgets y la bomba se dibujan como lo que son (trampa de oso con dientes y muelles, chicle rosa, acelerador con rayo, bomba con mecha) con las funciones de iconos de `public/js/game.js`, y siempre van acompañados de su nombre en la leyenda; el portador de la bomba lleva además un anillo y el texto «bomba» en el marcador.
 - **Contraste** mínimo de 4,5:1 en textos y 3:1 en elementos gráficos importantes.
 - **Teclado.** Menús y sala de espera se usan enteros con Tab y Enter, con el foco siempre visible. El juego se controla con WASD y con las flechas.
 - **HTML semántico**: botones que son `<button>`, campos con `<label>`, encabezados ordenados.

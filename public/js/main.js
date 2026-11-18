@@ -12,6 +12,7 @@ let warned = false;     // aviso de «quedan 5 segundos» ya dado en esta bomba
 let toastTimer = null;
 
 applyI18n();
+document.querySelectorAll('img[data-icon]').forEach((img) => { img.src = Game.iconURL(img.dataset.icon); });
 
 // Recuperar el apodo de la última vez y el código si se entra con un enlace de invitación.
 try { $('name').value = localStorage.getItem('bomba-name') || ''; } catch (e) { /* sin almacenamiento */ }
@@ -118,6 +119,13 @@ function renderHud(state) {
     const hasBomb = s.id === state.bomb.holder;
     const li = playerItem({ ...playerById(s.id), id: s.id }, hasBomb ? t('tag_bomb') : (s.alive ? '' : t('tag_out')));
     li.classList.toggle('bomb', hasBomb);
+    if (hasBomb) {
+      const icon = document.createElement('img');
+      icon.className = 'hud-icon';
+      icon.src = Game.iconURL('bomb');
+      icon.alt = '';
+      li.querySelector('.tag').before(icon);
+    }
     li.classList.toggle('out', !s.alive);
     return li;
   }));
