@@ -250,6 +250,7 @@ Aprendidas en las sesiones 1 a 5. Tenlas en cuenta antes de prometer nada:
 - **Sin acceso al registro de npm** (error 403). No puedes ejecutar `npm install`. Las dependencias ya están en `node_modules/`; si hace falta reinstalar, pide al alumno que haga doble clic en `probar.bat` y lee después `prueba.log`.
 - **No puedes usar la terminal de Windows ni el escritorio del alumno** salvo que te dé acceso. Lo que tenga que ejecutarse en Windows (`start.bat`, `cloudflared`, el firewall) lo hace el alumno; dale los pasos exactos.
 - **Tu navegador de pruebas no puede conectarse por WebSocket a la IP de red local** (lo bloquea su proxy). Por `localhost` sí. La prueba desde otro PC la hace el alumno.
-- **GitHub:** no puedes crear repositorios ni invitar colaboradores; como mucho, trabajar con uno ya autorizado.
+- **GitHub:** no puedes crear repositorios ni invitar colaboradores. Desde la terminal del entorno de Claude, `git pull` y `git push` fallan (el proxy devuelve 403): haz el commit y pide al alumno que ejecute `subir.bat` (y que haga `git pull` en Windows si el otro coautor ha subido algo).
+- **Git necesita permiso de borrado** en la carpeta (para sus archivos `.lock`). Pídelo con la herramienta de permisos antes del primer commit de la sesión.
 - **No cambies la configuración de seguridad de Windows** (firewall, antivirus) aunque tengas forma de hacerlo: explícale al alumno cómo hacerlo él.
 - Si encuentras otra limitación, dila al usuario y añádela aquí y en el diario.
