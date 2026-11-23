@@ -112,6 +112,26 @@ function testRules() {
   assert.ok(!game.effectsOf(g, tr).includes('s'), 'al salir de la trampa no esprinta solo');
   ok(`esprint: x${CONFIG.SPRINT_FACTOR} durante ${CONFIG.SPRINT_SECONDS} s, ${CONFIG.SPRINT_COOLDOWN} s de recarga, no se repite solo ni funciona en la trampa`);
 
+  // Los estanques tienen tamaños y siluetas distintas; entrar en uno teletransporta lejos.
+  g = game.createGame([{ id: 'A', name: 'A', index: 0 }, { id: 'B', name: 'B', index: 1 }], 'forest');
+  assert.strictEqual(g.ponds.length, 5, 'cada mapa tiene cuatro estanques más el punto de interés central');
+  assert.ok(new Set(g.ponds.map((pond) => pond.shape)).size >= 3, 'los estanques tienen siluetas variadas');
+  assert.ok(new Set(g.ponds.map((pond) => `${pond.rx}x${pond.ry}`)).size >= 4, 'los estanques tienen tamaños variados');
+  for (const theme of game.MAP_THEMES) {
+    const themed = game.createGame([], theme);
+    assert.strictEqual(themed.ponds.length, 5, `${theme} conserva los cinco estanques`);
+    assert.ok(themed.ponds.every((pond) => !themed.walls[Math.floor(pond.y / game.TILE)][Math.floor(pond.x / game.TILE)]), `${theme} tiene estanques en casillas transitables`);
+  }
+  const teleporter = g.ponds.find((pond) => !pond.landmark);
+  const swimmer = g.players.get('A');
+  Object.assign(swimmer, { x: teleporter.x, y: teleporter.y });
+  const teleport = game.step(g, 0.05).events.find((event) => event.type === 'teleport');
+  assert.ok(teleport && teleport.by === 'A', 'entrar en el agua debe generar el teletransporte');
+  assert.ok(Math.hypot(teleport.to.x - teleport.from.x, teleport.to.y - teleport.from.y) >= Math.min(game.COLS, game.ROWS) * game.TILE * 0.55);
+  assert.ok(!g.ponds.some((pond) => (((teleport.to.x - pond.x) / pond.rx) ** 2 + ((teleport.to.y - pond.y) / pond.ry) ** 2) <= 1), 'la salida no cae en otro estanque');
+  assert.ok(!game.step(g, 0.05).events.some((event) => event.type === 'teleport'), 'el salto no se encadena automáticamente');
+  ok('cinco estanques variados: al entrar, el jugador aparece en una zona lejana y segura');
+
   // Pasar la bomba al tocar, con inmunidad para quien la acaba de pasar.
   g = arena(['A', 'B']);
   Object.assign(g.players.get('B'), { x: 120, y: 100 });
@@ -188,14 +208,36 @@ async function testNetwork() {
   assert.strictEqual((await ask(luis, 'join_room', { name: 'ana', code })).error, 'name_taken');
   ok('se rechazan apodo vacío, código inexistente, apodo repetido y empezar con un solo jugador');
 
-  const update = once(ana, 'room_update');
+  const update = Promise.all([once(ana, 'room_update'), once(luis, 'room_update')]);
   assert.ok((await ask(luis, 'join_room', { name: 'Luis', code: code.toLowerCase() })).ok);
-  const lobbyUpdate = await update;
+  const lobbyUpdate = (await update)[0];
   assert.strictEqual(lobbyUpdate.players.length, 2);
   assert.strictEqual(lobbyUpdate.theme, 'desert');
+  assert.ok(lobbyUpdate.players.every((p) => p.shape && /^#[0-9a-f]{6}$/.test(p.color)));
+  const martaJoins = Promise.all([once(ana, 'room_update'), once(luis, 'room_update'), once(marta, 'room_update')]);
   assert.ok((await ask(marta, 'join_room', { name: 'Marta', code })).ok);
+  await martaJoins;
   assert.strictEqual((await ask(luis, 'start_game')).error, 'not_host');
-  ok('se unen dos jugadores más y solo el máster puede empezar');
+  assert.strictEqual((await ask(luis, 'set_theme', { theme: 'ruins' })).error, 'not_host');
+  const themeUpdate = Promise.all([once(ana, 'room_update'), once(luis, 'room_update'), once(marta, 'room_update')]);
+  assert.ok((await ask(ana, 'set_theme', { theme: 'ruins' })).ok);
+  assert.ok((await themeUpdate).every((room) => room.theme === 'ruins'), 'todos reciben el mapa nuevo');
+  assert.strictEqual((await ask(ana, 'set_theme', { theme: 'volcano' })).error, 'invalid_theme');
+  const themeBack = Promise.all([once(ana, 'room_update'), once(luis, 'room_update'), once(marta, 'room_update')]);
+  assert.ok((await ask(ana, 'set_theme', { theme: 'desert' })).ok);
+  assert.ok((await themeBack).every((room) => room.theme === 'desert'));
+  const skinUpdate = Promise.all([once(ana, 'room_update'), once(marta, 'room_update')]);
+  assert.ok((await ask(luis, 'customize_player', { shape: 'star', color: '#12abef' })).ok);
+  const customizedRooms = await skinUpdate;
+  assert.ok(customizedRooms.every((room) => room.players.find((p) => p.id === luis.id).shape === 'star'), 'la sala recibe la forma personalizada');
+  const customized = customizedRooms[0];
+  assert.deepStrictEqual(
+    (({ shape, color }) => ({ shape, color }))(customized.players.find((p) => p.id === luis.id)),
+    { shape: 'star', color: '#12abef' },
+  );
+  assert.strictEqual((await ask(luis, 'customize_player', { shape: 'blob', color: '#12abef' })).error, 'invalid_skin');
+  assert.strictEqual((await ask(luis, 'customize_player', { shape: 'star', color: 'red' })).error, 'invalid_skin');
+  ok('sala: el máster cambia el mapa y cada jugador personaliza forma y color');
 
   let res = await (await fetch(`${URL}/api/games/${code}`)).json();
   assert.strictEqual(res.status, 'lobby');
@@ -214,6 +256,13 @@ async function testNetwork() {
   const map = maps[0];
   assert.strictEqual(map.theme, 'desert');
   assert.ok(map.landmark && map.landmark.x > 0 && map.landmark.y > 0);
+  assert.strictEqual(map.ponds.length, 5);
+  assert.deepStrictEqual(
+    (({ shape, color }) => ({ shape, color }))(map.players.find((p) => p.id === luis.id)),
+    { shape: 'star', color: '#12abef' },
+  );
+  assert.strictEqual((await ask(ana, 'set_theme', { theme: 'forest' })).error, 'game_in_progress');
+  assert.strictEqual((await ask(luis, 'customize_player', { shape: 'circle', color: '#123456' })).error, 'game_in_progress');
   assert.strictEqual(map.gadgets.length, 3 * CONFIG.GADGETS_PER_TYPE);
   for (const type of ['trap', 'gum', 'boost']) {
     assert.strictEqual(map.gadgets.filter((g) => g.type === type).length, CONFIG.GADGETS_PER_TYPE);
@@ -231,8 +280,18 @@ async function testNetwork() {
     const cellX = Math.floor(item.x / map.tile);
     const cellY = Math.floor(item.y / map.tile);
     assert.ok(Math.abs(cellX - map.cols / 2) > 4 || Math.abs(cellY - map.rows / 2) > 4);
+    assert.ok(map.ponds.every((pond) => (((item.x - pond.x) / pond.rx) ** 2 + ((item.y - pond.y) / pond.ry) ** 2) > 1), 'los jugadores y gadgets aparecen fuera del agua');
   }
-  ok('mapa aleatorio igual para todos: 24 gadgets y 3 apariciones distintas, nada dentro de un muro');
+  for (const pond of map.ponds) {
+    const cx = Math.floor(pond.x / map.tile);
+    const cy = Math.floor(pond.y / map.tile);
+    for (let y = cy - Math.ceil(pond.ry / map.tile) - 1; y <= cy + Math.ceil(pond.ry / map.tile) + 1; y++) {
+      for (let x = cx - Math.ceil(pond.rx / map.tile) - 1; x <= cx + Math.ceil(pond.rx / map.tile) + 1; x++) {
+        assert.strictEqual(map.walls[y][x], '0', 'cada estanque queda despejado de muros');
+      }
+    }
+  }
+  ok('mapa compartido: estanques libres, gadgets y jugadores fuera del agua y de los muros');
 
   const late = await client();
   assert.strictEqual((await ask(late, 'join_room', { name: 'Tarde', code })).error, 'game_in_progress');

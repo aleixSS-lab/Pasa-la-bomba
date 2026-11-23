@@ -8,12 +8,12 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 20, 23-11-2026.*
+*Última actualización: sesión 21, 23-11-2026.*
 
 ## Estado actual
 
 - **Publicado:** https://pasa-la-bomba-0db0.onrender.com (Render, gratis). Se actualiza solo con cada fusión en `main`.
-- **Funciona:** salas con código, tres mapas pixelados elegibles por quien crea la sala, obstáculos y puntos de interés temáticos, más cactus en el desierto, bomba, gadgets, esprint con recarga y el resto de la partida; `npm test` superada en la rama `view-mapas-tematicos`, todavía sin fusionar en `main`.
+- **Funciona:** salas con código, selector de mapa en creación y sala de espera, cinco estanques teletransportadores de varias formas y tamaños por mapa, skins con forma y color elegibles, bomba, gadgets, esprint y el resto de la partida. `npm test` pasa en `game-estanques-personalizacion`, todavía local y sin subir.
 - **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
 - **Sin probar:** una partida real entre personas en PC distintos (ya basta con la web de Render). `start.bat` y el túnel quedan como plan B.
 - **Fase:** 4 de 5 (red real y ajuste jugando).
@@ -45,6 +45,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 18 | 18-11 | Laguna, oasis y fuente central | Un punto de interés decorativo en cada tema |
 | 19 | 18-11 | Más cactus en el desierto | Más grupos de obstáculos y mayor presencia de cactus |
 | 20 | 23-11 | Integrar mapas temáticos con la rama de esprint | Rama visual puesta al día con `game-esprint`; conflictos resueltos conservando ambos cambios |
+| 21 | 23-11 | Estanques con teletransporte y skins personalizables | El máster cambia el mapa en la sala; cada jugador elige forma y color |
 
 ## 1. Herramientas de IA
 
@@ -82,6 +83,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Los bloques no tienen por qué ser bloques; adapta los obstáculos a cada mapa» | Árboles, cactus y rocas, columnas rotas y suelos propios |
 | «¿Podrías añadir algún elemento así bonito que pueda ayudar a destacar?» | Laguna, oasis y fuente central |
 | «Cambia el de desierto, hay mucho espacio sin bloques (cactus)» | Más grupos de obstáculos y cactus en el desierto |
+| «Haz que al entrar en el estanque aparezcas en otra parte, pon más estanques de distintas formas y tamaños, deja elegir el mapa en la sala y personalizar forma y color del jugador» | Cinco estanques interactivos por mapa, cambio de mapa en la sala de espera y ocho formas con color a elección |
 
 ## 4. Qué tuvo que investigar el alumno
 
@@ -99,6 +101,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Hosting: servidor persistente (Render) frente a funciones *serverless* (Vercel), y qué es un servicio *realtime* como Supabase.
 - Cómo el servidor transmite el tema elegido y cómo Canvas dibuja siluetas pixeladas, texturas y puntos de interés.
 - Cómo reservar zonas decorativas en un mapa aleatorio y ajustar la densidad de obstáculos sin cerrar rutas.
+- Cómo el servidor detecta la entrada en una zona interactiva y transmite cambios de apariencia a todos los clientes.
 
 ## 5. Qué no funcionó a la primera
 
@@ -904,3 +907,34 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Al reaplicar los mapas surgieron conflictos en `DIARIO.md` y en la exportación final de `server/game.js`. Se combinaron las sesiones de ambos autores y se exportan conjuntamente `sprintWait` y `MAP_THEMES`.
 
 **Siguiente paso:** revisar el pull request #13 y fusionarlo según `FUSION.md` cuando corresponda.
+
+---
+
+## Sesión 21 — 2026-11-23 — Estanques con teletransporte y skins personalizables
+
+**Autor:** Adriana.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+
+**Qué se pidió:** añadir estanques que teletransporten al jugador a otra zona, más estanques de distintas formas y tamaños, selector de mapa en la sala de espera y personalización de la forma y el color del jugador.
+
+**Qué se hizo:**
+
+- Rama `game-estanques-personalizacion`, basada en `view-mapas-tematicos` para aprovechar los mapas y su selección existentes.
+- Cada tema genera cinco estanques: el punto de interés central y cuatro charcas adicionales. Varían en tamaño y silueta; sus zonas se reservan del generador de muros, gadgets y apariciones.
+- El servidor teletransporta a una zona lejana y libre al jugador que entra en el agua, emite el evento `teleport` y aplica una pausa ajustable en `server/config.js` para evitar saltos encadenados.
+- En la sala de espera, el máster puede cambiar el mapa antes de empezar; el cambio se transmite a todos y se valida en el servidor.
+- Cada jugador puede elegir una de ocho formas (círculo, cuadrado, triángulo, rombo, estrella, hexágono, cruz o pentágono) y cualquier color. La sala comparte y valida las elecciones; el juego las dibuja en el mapa, el minimapa, el marcador y la clasificación.
+- `README.md` y `CLAUDE.md` actualizados; `test/smoke.js` cubre estanques transitables, teletransporte lejano, mapas sincronizados, skins sincronizadas y validación de eventos.
+- `npm test` terminó con «Todo correcto»; `git diff --check` y `node --check` en los JavaScript modificados no detectaron errores.
+
+**Qué falló y cómo se arregló:**
+
+- La comprobación visual rápida no se pudo completar: la herramienta de captura del navegador agotó el tiempo dos veces. Se detuvo el servidor local; la revisión visual queda pendiente y no se detectó un fallo del juego en las pruebas automáticas.
+
+**Decisiones y por qué:**
+
+- Se mantiene un solo PR para la petición y la rama sale de `view-mapas-tematicos`, porque los estanques y el selector dependen del modelo de mapa nuevo. La rama no se ha subido todavía.
+- Solo el máster cambia el mapa; cada participante cambia únicamente su propia skin y solo mientras la sala está esperando.
+- Las formas conservan un borde oscuro y otro claro para que se distingan con colores personalizados de brillo distinto.
+
+**Siguiente paso:** dejar la revisión visual en una pestaña pendiente y preguntar si se sube la rama `game-estanques-personalizacion` a GitHub.

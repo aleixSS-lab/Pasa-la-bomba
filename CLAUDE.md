@@ -157,7 +157,8 @@ Reglas de diseño:
 - **Valores en `server/config.js`.** Todos los números de *equilibrio* del juego (tiempos, multiplicadores, cantidad de gadgets) están ahí y solo ahí, para ajustarlos probando. No los escribas a mano en otro archivo ni en los textos: si un texto necesita un número, el servidor lo envía (por ejemplo `bombSeconds`). Si cambias uno, ejecuta `npm test`. Las constantes *estructurales* (tamaño del mapa y de las casillas, velocidad base y frecuencia del servidor en `server/game.js`; mínimo 2 y máximo 8 jugadores en `server/index.js`) se quedan donde están.
 - **20 actualizaciones por segundo.** El servidor emite las posiciones cada 50 ms y el cliente las suaviza al dibujar. No hace falta nada más sofisticado.
 - **Sin login.** El jugador escribe un apodo (único dentro de la sala) y crea una sala o se une con un código de 4 letras. Quien crea la sala es el máster y es el único que puede iniciar la partida. Si el máster se va, lo es el siguiente jugador.
-- **Mapa.** Cuadrícula de 40×30 casillas con muros aleatorios. Gadgets y apariciones solo se colocan en casillas alcanzables.
+- **Mapa.** Cuadrícula de 40×30 casillas con muros aleatorios. Cada tema genera cinco estanques transitables de varias formas y tamaños; entrar en uno transporta al jugador a una zona lejana y libre. Los estanques y la zona central se reservan durante la generación para que no se tapen con muros, gadgets o apariciones. La recarga del teletransporte está en `config.js`.
+- **Personalización.** Cada jugador puede elegir en la sala de espera una de ocho formas y un color hexadecimal. El servidor valida y comparte esa apariencia con toda la sala. Solo el máster puede cambiar el mapa mientras la sala está esperando.
 - **Endpoints REST** (solo lectura, en `server/index.js`):
   - `GET /api/games/:id` (el id es el código de sala) devuelve en JSON `id`, `status` (`lobby`, `playing` o `finished`), `bombSeconds`, `players` (por puesto), `eliminationOrder` y `winner`. Si no existe, 404 con `{ "error": "game_not_found" }`. El resultado se guarda aunque la sala se vacíe. El final de partida también se notifica por WebSocket (`game_over`).
   - `GET /api/lan` devuelve `{ addresses, port }` con las IP del portátil en la red local, sin adaptadores virtuales (VirtualBox, WSL, Hyper-V). Lo usa el cliente para que el enlace de invitación no diga `localhost`. **Ojo:** a 18-11-2026 el cliente ya lo llama pero la parte del servidor no existe (ver `DIARIO.md`, sesión 5).
@@ -168,11 +169,12 @@ Eventos de Socket.IO (no cambies nombres ni datos sin preguntar):
 | Dirección | Evento | Para qué |
 |---|---|---|
 | cliente → servidor | `create_room`, `join_room`, `leave_room` | entrar y salir de salas |
-| cliente → servidor | `start_game`, `back_to_lobby` | solo el máster |
+| cliente → servidor | `start_game`, `back_to_lobby`, `set_theme` | iniciar o devolver a la sala; solo el máster cambia el mapa antes de empezar |
+| cliente → servidor | `customize_player` | cada jugador actualiza su forma y color mientras está en la sala de espera |
 | cliente → servidor | `input` | teclas pulsadas (`up`, `down`, `left`, `right`) y `sprint: true` en el mensaje de la pulsación de Espacio |
-| servidor → cliente | `room_update` | estado de la sala de espera |
-| servidor → cliente | `game_start`, `state`, `game_over` | partida: mapa inicial (con `sprintCooldown`), posiciones, efectos (`fx`: `t`, `g`, `b`, `s` = esprint), segundos para el próximo esprint (`sw`) y bomba 20 veces por segundo, resultado |
-| servidor → cliente | `game_event` | sucesos sueltos; su campo `type` es `bomb` (bomba nueva), `pass`, `explosion`, `gadget` o `sprint` |
+| servidor → cliente | `room_update` | estado de la sala de espera, mapa y skins de los jugadores |
+| servidor → cliente | `game_start`, `state`, `game_over` | partida: mapa inicial (con estanques y `sprintCooldown`), skins, posiciones, efectos (`fx`: `t`, `g`, `b`, `s` = esprint), segundos para el próximo esprint (`sw`) y bomba 20 veces por segundo, resultado |
+| servidor → cliente | `game_event` | sucesos sueltos; su campo `type` es `bomb` (bomba nueva), `pass`, `explosion`, `gadget`, `sprint` o `teleport` |
 
 ## 6. Normas de trabajo
 

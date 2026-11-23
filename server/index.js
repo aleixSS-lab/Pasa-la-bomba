@@ -81,7 +81,13 @@ function addPlayer(room, socket, name) {
   const used = new Set([...room.players.values()].map((p) => p.index));
   let index = 0;
   while (used.has(index)) index++;
-  room.players.set(socket.id, { id: socket.id, name, index });
+  room.players.set(socket.id, {
+    id: socket.id,
+    name,
+    index,
+    shape: game.SHAPES[index % game.SHAPES.length],
+    color: game.SKIN_COLORS[index % game.SKIN_COLORS.length],
+  });
   socket.join(room.code);
   socket.data.code = room.code;
   io.to(room.code).emit('room_update', publicRoom(room));
@@ -120,12 +126,14 @@ function startGame(room) {
     gadgetRadius: game.GADGET_RADIUS,
     theme: room.theme,
     landmark: room.game.landmark,
+    ponds: room.game.ponds,
     bombSeconds: CONFIG.BOMB_SECONDS,
     sprintCooldown: CONFIG.SPRINT_SECONDS + CONFIG.SPRINT_COOLDOWN,
     walls: room.game.walls.map((row) => row.map((w) => (w ? '1' : '0')).join('')),
     gadgets: [...room.game.gadgets.values()],
     players: [...room.game.players.values()].map((p) => ({
-      id: p.id, name: p.name, index: p.index, x: p.x, y: p.y, alive: true, fx: '',
+      id: p.id, name: p.name, index: p.index, shape: p.shape, color: p.color,
+      x: p.x, y: p.y, alive: true, fx: '',
     })),
   });
 
@@ -203,6 +211,33 @@ io.on('connection', (socket) => {
     if (room.status !== 'lobby') return reply(ack, { ok: false, error: 'game_in_progress' });
     if (room.players.size < MIN_PLAYERS) return reply(ack, { ok: false, error: 'need_players' });
     startGame(room);
+    reply(ack, { ok: true });
+  });
+
+  socket.on('set_theme', (data, ack) => {
+    const room = myRoom();
+    if (!room) return reply(ack, { ok: false, error: 'room_not_found' });
+    if (room.hostId !== socket.id) return reply(ack, { ok: false, error: 'not_host' });
+    if (room.status !== 'lobby') return reply(ack, { ok: false, error: 'game_in_progress' });
+    if (!game.MAP_THEMES.includes(data && data.theme)) return reply(ack, { ok: false, error: 'invalid_theme' });
+    room.theme = data.theme;
+    io.to(room.code).emit('room_update', publicRoom(room));
+    reply(ack, { ok: true });
+  });
+
+  socket.on('customize_player', (data, ack) => {
+    const room = myRoom();
+    if (!room) return reply(ack, { ok: false, error: 'room_not_found' });
+    if (room.status !== 'lobby') return reply(ack, { ok: false, error: 'game_in_progress' });
+    const player = room.players.get(socket.id);
+    const shape = data && data.shape;
+    const color = typeof (data && data.color) === 'string' ? data.color.toLowerCase() : '';
+    if (!player || !game.SHAPES.includes(shape) || !/^#[0-9a-f]{6}$/.test(color)) {
+      return reply(ack, { ok: false, error: 'invalid_skin' });
+    }
+    player.shape = shape;
+    player.color = color;
+    io.to(room.code).emit('room_update', publicRoom(room));
     reply(ack, { ok: true });
   });
 

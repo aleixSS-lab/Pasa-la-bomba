@@ -82,6 +82,7 @@ button:disabled { color: var(--muted); background: #262b3d; border-color: #262b3
 .map-option { display: flex; min-height: 72px; align-items: end; padding: 8px; margin: 0; border: 2px solid var(--line); border-radius: 8px; cursor: pointer; font-size: 0.85rem; line-height: 1.2; }
 .map-option input { width: auto; min-height: auto; margin: 0 6px 2px 0; accent-color: var(--gold); }
 .map-option:has(input:checked) { outline: 3px solid var(--focus); outline-offset: 1px; }
+.map-option:has(input:disabled) { cursor: default; opacity: 0.8; }
 .map-option span { color: #fff; text-shadow: 0 1px 3px #111827, 0 0 3px #111827; }
 .forest-option { background: radial-gradient(circle at 22% 30%, #286044 0 9px, transparent 10px), radial-gradient(circle at 56% 64%, #32734b 0 12px, transparent 13px), radial-gradient(circle at 84% 22%, #236044 0 8px, transparent 9px), linear-gradient(145deg, #9ac875, #639d59); }
 .desert-option { background: radial-gradient(ellipse at 68% 30%, #ad7046 0 8px, transparent 9px), radial-gradient(ellipse at 24% 70%, #bd7a4d 0 6px, transparent 7px), linear-gradient(165deg, transparent 42%, #f0d999 43% 56%, transparent 57%), #c7a965; }
@@ -105,6 +106,12 @@ a { color: var(--focus); }
 
 .code-line { font-size: 1.1rem; }
 .room-theme { color: var(--muted); }
+.lobby-map-picker { margin-top: 12px; }
+.skin-picker { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 14px 0 18px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; }
+.skin-picker legend { padding: 0 6px; font-weight: 700; }
+.skin-picker label { align-self: center; margin: 4px 0; }
+.skin-picker select { min-height: 42px; padding: 6px 10px; font: inherit; color: var(--text); background: var(--bg); border: 2px solid var(--line); border-radius: 8px; }
+#lobby-color { width: 76px; height: 44px; min-height: 44px; padding: 3px; justify-self: end; cursor: pointer; }
 .code-line strong { font-size: 1.6rem; letter-spacing: 0.25em; color: var(--gold); margin-left: 6px; }
 
 /* Listas de jugadores: sala de espera, marcador y clasificación */
@@ -120,7 +127,7 @@ a { color: var(--focus); }
   border-radius: 10px;
 }
 .players li.me { border-color: var(--text); }
-.symbol { font-size: 1.3rem; width: 1.3em; text-align: center; line-height: 1; }
+.symbol { font-size: 1.3rem; width: 1.3em; text-align: center; line-height: 1; text-shadow: 0 1px 2px #000, 0 0 2px #fff; }
 .name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 .tag { color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
 ol.players { counter-reset: pos; }
@@ -145,6 +152,7 @@ body.playing main { padding: 0; display: block; height: 100%; }
 .hint .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .hint .legend li { margin: 0; }
 .hint .legend img { width: 24px; height: 24px; }
+.pond-swatch { width: 24px; height: 14px; flex: none; border: 2px solid #d7c18a; border-radius: 55% 45% 60% 40%; background: #4ba7a0; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35); }
 .hud-icon { width: 22px; height: 22px; }
 
 /* Cartel con la cuenta atrás de la bomba */

@@ -15,6 +15,7 @@ module.exports = {
   BOOST_FACTOR: 1.5,      // acelerador: velocidad multiplicada por este valor
   BOOST_SECONDS: 3,       // acelerador: duración
   GADGETS_PER_TYPE: 8,    // cuántos gadgets de cada tipo hay en el mapa
+  POND_TELEPORT_COOLDOWN: 1.5, // estanques: pausa antes de poder teletransportarse otra vez
 
   SPRINT_FACTOR: 1.6,     // esprint (tecla Espacio): velocidad multiplicada por este valor
   SPRINT_SECONDS: 1.5,    // esprint: cuánto dura

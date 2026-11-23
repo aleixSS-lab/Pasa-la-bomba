@@ -75,8 +75,9 @@ function playerItem(p, extra) {
   const li = document.createElement('li');
   const symbol = document.createElement('span');
   symbol.className = 'symbol';
-  symbol.textContent = Game.SYMBOLS[p.index % 8];
-  symbol.style.color = Game.COLORS[p.index % 8];
+  const shapeIndex = Game.SHAPES.indexOf(p.shape);
+  symbol.textContent = Game.SYMBOLS[shapeIndex >= 0 ? shapeIndex : p.index % 8];
+  symbol.style.color = p.color || Game.COLORS[p.index % 8];
   symbol.setAttribute('aria-hidden', 'true');
   const name = document.createElement('span');
   name.className = 'name';
@@ -99,6 +100,15 @@ const isHost = () => room && room.hostId === socket.id;
 function renderLobby() {
   $('lobby-code').textContent = room.code;
   $('lobby-theme').textContent = t(`map_${room.theme || 'forest'}`);
+  document.querySelectorAll('#lobby-map-picker input').forEach((input) => {
+    input.checked = input.value === room.theme;
+    input.disabled = !isHost();
+  });
+  const me = room.players.find((p) => p.id === socket.id);
+  if (me) {
+    $('lobby-shape').value = me.shape || Game.SHAPES[me.index % Game.SHAPES.length];
+    $('lobby-color').value = me.color || Game.COLORS[me.index % Game.COLORS.length];
+  }
   $('share-url').value = `${shareOrigin}${location.pathname}?sala=${room.code}`;
   $('share-note').textContent = shareNote;
   $('lobby-count').textContent = t('players_count', { n: room.players.length });
@@ -200,6 +210,24 @@ $('btn-create').addEventListener('click', () => {
   enterRoom('create_room', { theme });
 });
 
+document.querySelectorAll('#lobby-map-picker input').forEach((input) => {
+  input.addEventListener('change', () => {
+    if (!input.checked) return;
+    socket.emit('set_theme', { theme: input.value }, (res) => {
+      showError(res && res.ok ? null : (res && res.error), 'lobby-error');
+    });
+  });
+});
+
+function saveSkin() {
+  if (!room) return;
+  socket.emit('customize_player', { shape: $('lobby-shape').value, color: $('lobby-color').value }, (res) => {
+    showError(res && res.ok ? null : (res && res.error), 'lobby-error');
+  });
+}
+$('lobby-shape').addEventListener('change', saveSkin);
+$('lobby-color').addEventListener('change', saveSkin);
+
 $('form-home').addEventListener('submit', (e) => {
   e.preventDefault();
   const code = $('code').value.trim().toUpperCase();
@@ -290,6 +318,8 @@ socket.on('game_event', (event) => {
     notify(event.id === me ? t('announce_out_you') : t('announce_out_other', { name: playerById(event.id).name }));
   } else if (event.type === 'gadget' && event.by === me) {
     notify(t(`announce_${event.kind}`));
+  } else if (event.type === 'teleport' && event.by === me) {
+    notify(t('announce_teleport'));
   }
 });
 

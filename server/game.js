@@ -13,6 +13,29 @@ const TICK_MS = 50;       // el servidor avanza 20 veces por segundo
 const GADGET_TYPES = ['trap', 'gum', 'boost'];
 const MAP_THEMES = ['forest', 'desert', 'ruins'];
 const LANDMARK_CLEARANCE = 4;
+const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'hexagon', 'cross', 'pentagon'];
+const SKIN_COLORS = ['#ff6b6b', '#4dabf7', '#69db7c', '#f783ac', '#da77f2', '#ff922b', '#38d9a9', '#f1f3f5'];
+
+const POND_LAYOUTS = {
+  forest: [
+    { x: 8, y: 7, rx: 50, ry: 34, shape: 'oval' },
+    { x: 32, y: 7, rx: 72, ry: 44, shape: 'lobed' },
+    { x: 8, y: 23, rx: 42, ry: 42, shape: 'round' },
+    { x: 32, y: 23, rx: 62, ry: 32, shape: 'bean' },
+  ],
+  desert: [
+    { x: 8, y: 7, rx: 38, ry: 29, shape: 'round' },
+    { x: 32, y: 7, rx: 68, ry: 35, shape: 'bean' },
+    { x: 8, y: 23, rx: 55, ry: 30, shape: 'oval' },
+    { x: 32, y: 23, rx: 42, ry: 42, shape: 'lobed' },
+  ],
+  ruins: [
+    { x: 8, y: 7, rx: 62, ry: 36, shape: 'stepped' },
+    { x: 32, y: 7, rx: 44, ry: 44, shape: 'round' },
+    { x: 8, y: 23, rx: 74, ry: 34, shape: 'oval' },
+    { x: 32, y: 23, rx: 48, ry: 30, shape: 'bean' },
+  ],
+};
 
 const rand = (n) => Math.floor(Math.random() * n);
 
@@ -27,6 +50,27 @@ function generateMap(theme) {
   const layout = layouts[theme] || layouts.forest;
   const landmarkCellX = Math.floor(COLS / 2);
   const landmarkCellY = Math.floor(ROWS / 2);
+  const outerPonds = (POND_LAYOUTS[theme] || POND_LAYOUTS.forest).map((pond, i) => ({
+    id: `pond-${i}`,
+    x: (pond.x + 0.5) * TILE,
+    y: (pond.y + 0.5) * TILE,
+    rx: pond.rx,
+    ry: pond.ry,
+    shape: pond.shape,
+  }));
+  const centerPond = {
+    id: 'pond-center',
+    x: (landmarkCellX + 0.5) * TILE,
+    y: (landmarkCellY + 0.5) * TILE,
+    rx: theme === 'desert' ? 67 : (theme === 'ruins' ? 57 : 65),
+    ry: theme === 'desert' ? 38 : (theme === 'ruins' ? 37 : 42),
+    shape: 'oval',
+    landmark: true,
+  };
+  const ponds = [centerPond, ...outerPonds];
+  const nearPond = (x, y) => ponds.some((pond) =>
+    Math.abs(x - pond.x / TILE + 0.5) <= Math.ceil(pond.rx / TILE) + 1
+    && Math.abs(y - pond.y / TILE + 0.5) <= Math.ceil(pond.ry / TILE) + 1);
   for (;;) {
     const walls = Array.from({ length: ROWS }, (_, y) =>
       Array.from({ length: COLS }, (_, x) => x === 0 || y === 0 || x === COLS - 1 || y === ROWS - 1));
@@ -39,7 +83,7 @@ function generateMap(theme) {
       for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) {
         const nearLandmark = Math.abs(x - landmarkCellX) <= LANDMARK_CLEARANCE
           && Math.abs(y - landmarkCellY) <= LANDMARK_CLEARANCE;
-        if (!nearLandmark) walls[y][x] = true;
+        if (!nearLandmark && !nearPond(x, y)) walls[y][x] = true;
       }
     }
 
@@ -61,13 +105,20 @@ function generateMap(theme) {
       }
     }
 
-    if (reachable.length >= free.length * 0.9) {
+    const everyPondReachable = ponds.every((pond) => {
+      const x = Math.floor(pond.x / TILE);
+      const y = Math.floor(pond.y / TILE);
+      return seen.has(y * COLS + x);
+    });
+    if (reachable.length >= free.length * 0.9 && everyPondReachable) {
       const placementCells = reachable.filter(([x, y]) =>
-        Math.abs(x - landmarkCellX) > LANDMARK_CLEARANCE || Math.abs(y - landmarkCellY) > LANDMARK_CLEARANCE);
+        (Math.abs(x - landmarkCellX) > LANDMARK_CLEARANCE || Math.abs(y - landmarkCellY) > LANDMARK_CLEARANCE)
+        && !nearPond(x, y));
       return {
         walls,
         reachable: placementCells,
         landmark: { x: (landmarkCellX + 0.5) * TILE, y: (landmarkCellY + 0.5) * TILE },
+        ponds,
       };
     }
   }
@@ -97,7 +148,7 @@ function respawnGadget(game, type) {
 // Crea una partida nueva para la lista de jugadores [{id, name, index}].
 function createGame(playerList, theme = 'forest') {
   if (!MAP_THEMES.includes(theme)) theme = 'forest';
-  const { walls, reachable, landmark } = generateMap(theme);
+  const { walls, reachable, landmark, ponds } = generateMap(theme);
 
   // Barajar las casillas alcanzables: las primeras son gadgets, el resto posibles apariciones.
   for (let i = reachable.length - 1; i > 0; i--) {
@@ -106,7 +157,7 @@ function createGame(playerList, theme = 'forest') {
   }
 
   const game = {
-    walls, reachable, theme, landmark,
+    walls, reachable, theme, landmark, ponds,
     gadgets: new Map(), nextGadgetId: 0,
     players: new Map(),
     time: 0,
@@ -135,8 +186,10 @@ function createGame(playerList, theme = 'forest') {
     spawns.push(best);
     game.players.set(info.id, {
       id: info.id, name: info.name, index: info.index,
+      shape: SHAPES.includes(info.shape) ? info.shape : SHAPES[info.index % SHAPES.length],
+      color: /^#[0-9a-fA-F]{6}$/.test(info.color || '') ? info.color.toLowerCase() : SKIN_COLORS[info.index % SKIN_COLORS.length],
       x: best.x, y: best.y,
-      alive: true, outOrder: 0,       // outOrder: 1 para el primer eliminado, 2 para el segundo...
+      alive: true, outOrder: 0, inPond: false, teleportReadyAt: 0, // eliminación y salto de estanque
       frozenUntil: 0, slowUntil: 0, boostUntil: 0, immuneUntil: 0,
       sprintUntil: 0, sprintReadyAt: 0,   // esprint: hasta cuándo dura y desde cuándo se puede repetir
       input: { up: false, down: false, left: false, right: false, sprint: false },
@@ -188,6 +241,52 @@ function movePlayer(game, p, dt) {
     if (!hitsWall(game.walls, p.x + sx, p.y)) p.x += sx;
     if (!hitsWall(game.walls, p.x, p.y + sy)) p.y += sy;
   }
+}
+
+function pondAt(game, x, y) {
+  return game.ponds.find((pond) => {
+    const dx = (x - pond.x) / pond.rx;
+    const dy = (y - pond.y) / pond.ry;
+    return dx * dx + dy * dy <= 1;
+  });
+}
+
+// Al entrar en cualquier estanque, salta a una zona libre lejana del mapa.
+function usePonds(game, p, events) {
+  const pond = pondAt(game, p.x, p.y);
+  if (!pond) {
+    p.inPond = false;
+    return;
+  }
+  if (p.inPond || game.time < p.teleportReadyAt) {
+    p.inPond = true;
+    return;
+  }
+
+  const from = { x: p.x, y: p.y };
+  let destinations = game.reachable.map((cell) => {
+    const pos = center(cell);
+    return { ...pos, distance: Math.hypot(pos.x - from.x, pos.y - from.y) };
+  }).filter((pos) => pos.distance >= Math.min(COLS, ROWS) * TILE * 0.55);
+  if (!destinations.length) {
+    destinations = game.reachable.map((cell) => {
+      const pos = center(cell);
+      return { ...pos, distance: Math.hypot(pos.x - from.x, pos.y - from.y) };
+    });
+  }
+  const farthest = Math.max(...destinations.map((pos) => pos.distance));
+  let options = destinations.filter((pos) => pos.distance >= farthest * 0.8);
+  const unoccupied = options.filter((pos) => alivePlayers(game).every((other) =>
+    other.id === p.id || Math.hypot(other.x - pos.x, other.y - pos.y) >= TILE * 2));
+  if (unoccupied.length) options = unoccupied;
+  const to = options[rand(options.length)];
+  if (!to) return;
+
+  p.x = to.x;
+  p.y = to.y;
+  p.inPond = false;
+  p.teleportReadyAt = game.time + CONFIG.POND_TELEPORT_COOLDOWN;
+  events.push({ type: 'teleport', by: p.id, from, to: { x: p.x, y: p.y } });
 }
 
 function useGadgets(game, p, events) {
@@ -252,6 +351,7 @@ function step(game, dt) {
   for (const p of alivePlayers(game)) {
     trySprint(game, p, events);
     movePlayer(game, p, dt);
+    usePonds(game, p, events);
     useGadgets(game, p, events);
   }
   updateBomb(game, dt, events);
@@ -278,4 +378,7 @@ function sprintWait(game, p) {
   return Math.max(0, Math.ceil((p.sprintReadyAt - game.time) * 10) / 10);
 }
 
-module.exports = { createGame, step, effectsOf, sprintWait, TILE, COLS, ROWS, RADIUS, GADGET_RADIUS, SPEED, TICK_MS, MAP_THEMES };
+module.exports = {
+  createGame, step, effectsOf, sprintWait, TILE, COLS, ROWS, RADIUS, GADGET_RADIUS, SPEED, TICK_MS,
+  MAP_THEMES, SHAPES, SKIN_COLORS,
+};

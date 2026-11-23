@@ -52,6 +52,7 @@
           </ul>
         </li>
         <li data-i18n="how_4"></li>
+        <li data-i18n="how_5"></li>
       </ul>
     </section>
 
@@ -60,6 +61,30 @@
       <h1 id="lobby-title" tabindex="-1" data-i18n="lobby_title"></h1>
       <p class="code-line"><span data-i18n="room_code"></span> <strong id="lobby-code"></strong></p>
       <p class="room-theme"><span data-i18n="room_map"></span> <strong id="lobby-theme"></strong></p>
+
+      <fieldset id="lobby-map-picker" class="map-picker lobby-map-picker">
+        <legend data-i18n="map_lobby_title"></legend>
+        <label class="map-option forest-option"><input type="radio" name="lobby-theme" value="forest"><span data-i18n="map_forest"></span></label>
+        <label class="map-option desert-option"><input type="radio" name="lobby-theme" value="desert"><span data-i18n="map_desert"></span></label>
+        <label class="map-option ruins-option"><input type="radio" name="lobby-theme" value="ruins"><span data-i18n="map_ruins"></span></label>
+      </fieldset>
+
+      <fieldset class="skin-picker">
+        <legend data-i18n="skin_title"></legend>
+        <label for="lobby-shape" data-i18n="skin_shape_label"></label>
+        <select id="lobby-shape">
+          <option value="circle" data-i18n="shape_circle"></option>
+          <option value="square" data-i18n="shape_square"></option>
+          <option value="triangle" data-i18n="shape_triangle"></option>
+          <option value="diamond" data-i18n="shape_diamond"></option>
+          <option value="star" data-i18n="shape_star"></option>
+          <option value="hexagon" data-i18n="shape_hexagon"></option>
+          <option value="cross" data-i18n="shape_cross"></option>
+          <option value="pentagon" data-i18n="shape_pentagon"></option>
+        </select>
+        <label for="lobby-color" data-i18n="skin_color_label"></label>
+        <input id="lobby-color" type="color" value="#ff6b6b">
+      </fieldset>
 
       <label for="share-url" data-i18n="share_label"></label>
       <div class="row">
@@ -96,6 +121,7 @@
           <li><img data-icon="trap" alt=""><span data-i18n="gadget_trap"></span></li>
           <li><img data-icon="gum" alt=""><span data-i18n="gadget_gum"></span></li>
           <li><img data-icon="boost" alt=""><span data-i18n="gadget_boost"></span></li>
+          <li><span class="pond-swatch" aria-hidden="true"></span><span data-i18n="pond_legend"></span></li>
         </ul>
       </div>
     </section>

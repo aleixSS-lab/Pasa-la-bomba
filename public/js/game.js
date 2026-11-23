@@ -5,6 +5,7 @@
 const Game = (() => {
   // Cada jugador tiene un color y además una forma distinta (no depender solo del color).
   const COLORS = ['#ff6b6b', '#4dabf7', '#69db7c', '#f783ac', '#da77f2', '#ff922b', '#38d9a9', '#f1f3f5'];
+  const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'hexagon', 'cross', 'pentagon'];
   const SYMBOLS = ['●', '■', '▲', '◆', '★', '⬢', '✚', '⬟'];
   // Efectos activos que envía el servidor para cada jugador: t = trampa, g = chicle, b = acelerador.
   const EFFECTS = { t: 'trap', g: 'gum', b: 'boost' };
@@ -74,6 +75,9 @@ const Game = (() => {
     if (event.type === 'gadget') {
       gadgets.delete(event.removed);
       gadgets.set(event.added.id, event.added);
+    } else if (event.type === 'teleport') {
+      const p = players.get(event.by);
+      if (p) Object.assign(p, { x: event.to.x, y: event.to.y, drawX: event.to.x, drawY: event.to.y });
     } else if (event.type === 'explosion') {
       blasts.push({ x: event.x, y: event.y, start: performance.now() });
       if (event.id === myId) Object.assign(spectator, { x: event.x, y: event.y });
@@ -173,6 +177,7 @@ const Game = (() => {
     }
 
     drawLandmark(ctx, map.theme, map.landmark);
+    drawPonds(ctx, map.ponds || [], map.theme);
 
     // Gadgets: cada uno dibujado como lo que es, sobre una sombra para que destaque del suelo.
     ctx.textAlign = 'center';
@@ -206,11 +211,15 @@ const Game = (() => {
         ctx.arc(p.drawX, p.drawY, map.radius + 9, 0, Math.PI * 2);
         ctx.stroke();
       }
-      shapePath(ctx, p.index, p.drawX, p.drawY, map.radius);
-      ctx.fillStyle = COLORS[p.index % 8];
+      shapePath(ctx, p.shape, p.drawX, p.drawY, map.radius);
+      ctx.fillStyle = p.color || COLORS[p.index % 8];
       ctx.fill();
-      ctx.lineWidth = p.id === myId ? 3 : 1.5;
-      ctx.strokeStyle = p.id === myId ? '#ffffff' : DARK;
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = DARK;
+      ctx.stroke();
+      shapePath(ctx, p.shape, p.drawX, p.drawY, map.radius);
+      ctx.lineWidth = p.id === myId ? 2.5 : 1.5;
+      ctx.strokeStyle = '#f1f3f5';
       ctx.stroke();
       if (hasBomb) drawIcon(ctx, 'bomb', p.drawX + map.radius + 16, p.drawY + 2, 12);
 
@@ -382,6 +391,66 @@ const Game = (() => {
       c.fillStyle = '#8bd0bd'; c.fillRect(x - 38, y + 2, 18, 3); c.fillRect(x + 21, y - 13, 22, 3);
     }
     c.restore();
+  }
+
+  function pondPath(c, pond, scale = 1) {
+    const { x, y, shape } = pond;
+    const rx = pond.rx * scale;
+    const ry = pond.ry * scale;
+    if (shape === 'bean') {
+      c.beginPath();
+      c.moveTo(x - rx * 0.95, y - ry * 0.05);
+      c.bezierCurveTo(x - rx * 0.9, y - ry * 1.05, x - rx * 0.05, y - ry * 0.8, x + rx * 0.05, y - ry * 0.32);
+      c.bezierCurveTo(x + rx * 0.2, y - ry * 0.95, x + rx * 1.05, y - ry * 0.48, x + rx * 0.9, y + ry * 0.22);
+      c.bezierCurveTo(x + rx * 0.75, y + ry * 0.95, x - rx * 0.1, y + ry * 0.82, x - rx * 0.28, y + ry * 0.38);
+      c.bezierCurveTo(x - rx * 0.58, y + ry * 0.8, x - rx * 1.05, y + ry * 0.58, x - rx * 0.95, y - ry * 0.05);
+      c.closePath();
+    } else if (shape === 'lobed') {
+      c.beginPath();
+      for (let i = 0; i < 20; i++) {
+        const a = -Math.PI / 2 + (i * Math.PI * 2) / 20;
+        const bump = 0.82 + 0.14 * Math.cos(a * 5 + 0.3);
+        c[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rx * bump, y + Math.sin(a) * ry * bump);
+      }
+      c.closePath();
+    } else if (shape === 'stepped') {
+      const pts = [[-0.55, -1], [0.35, -1], [0.35, -0.72], [0.83, -0.72], [0.83, -0.2], [1, -0.2], [1, 0.45], [0.5, 0.45], [0.5, 0.9], [-0.25, 0.9], [-0.25, 0.65], [-0.85, 0.65], [-0.85, 0.1], [-1, 0.1], [-1, -0.55], [-0.55, -0.55]];
+      c.beginPath();
+      pts.forEach(([px, py], i) => c[i ? 'lineTo' : 'moveTo'](x + px * rx, y + py * ry));
+      c.closePath();
+    } else {
+      c.beginPath();
+      c.ellipse(x, y, rx, ry, shape === 'oval' ? -0.15 : 0, 0, Math.PI * 2);
+    }
+  }
+
+  function drawPonds(c, ponds, theme) {
+    const bank = theme === 'desert' ? '#bd9759' : (theme === 'ruins' ? '#737f7c' : '#639d59');
+    const water = theme === 'desert' ? '#43a99d' : '#4ba7a0';
+    for (const pond of ponds) {
+      if (pond.landmark) continue;
+      c.save();
+      c.fillStyle = 'rgba(13, 16, 26, 0.2)';
+      pondPath(c, { ...pond, y: pond.y + 7 }, 1.12);
+      c.fill();
+      c.fillStyle = bank;
+      pondPath(c, pond, 1.13);
+      c.fill();
+      c.fillStyle = water;
+      pondPath(c, pond, 0.98);
+      c.fill();
+      c.strokeStyle = 'rgba(195, 245, 224, 0.65)';
+      c.lineWidth = 3;
+      c.beginPath();
+      c.ellipse(pond.x - pond.rx * 0.18, pond.y - pond.ry * 0.22, pond.rx * 0.34, Math.max(2, pond.ry * 0.06), -0.18, 0, Math.PI * 0.8);
+      c.stroke();
+      if (theme === 'forest' && pond.rx > 48) {
+        c.fillStyle = '#397b50';
+        c.beginPath(); c.ellipse(pond.x + pond.rx * 0.32, pond.y + pond.ry * 0.12, 9, 5, -0.3, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#f783ac'; c.fillRect(pond.x + pond.rx * 0.32 - 2, pond.y + pond.ry * 0.12 - 5, 4, 4);
+      }
+      c.restore();
+    }
   }
 
   function label(text, x, y, color) {
@@ -578,7 +647,7 @@ const Game = (() => {
   }
 
   // Forma de cada jugador según su índice.
-  function shapePath(c, index, x, y, r) {
+  function shapePath(c, shape, x, y, r) {
     const poly = (n, rot, rr) => {
       for (let i = 0; i < n; i++) {
         const a = rot + (i * 2 * Math.PI) / n;
@@ -587,7 +656,8 @@ const Game = (() => {
       c.closePath();
     };
     c.beginPath();
-    switch (index % 8) {
+    const index = SHAPES.indexOf(shape);
+    switch (index < 0 ? 0 : index) {
       case 0: c.arc(x, y, r, 0, Math.PI * 2); break;              // círculo
       case 1: poly(4, Math.PI / 4, r * 1.3); break;               // cuadrado
       case 2: poly(3, -Math.PI / 2, r * 1.35); break;             // triángulo
@@ -629,6 +699,13 @@ const Game = (() => {
     map.walls.forEach((row, y) => {
       for (let x = 0; x < row.length; x++) if (row[x] === '1') c.fillRect(x * MINI, y * MINI, MINI, MINI);
     });
+    c.fillStyle = '#4ba7a0';
+    for (const pond of map.ponds || []) {
+      c.beginPath();
+      c.ellipse(pond.x / map.tile * MINI, pond.y / map.tile * MINI,
+        pond.rx / map.tile * MINI, pond.ry / map.tile * MINI, 0, 0, Math.PI * 2);
+      c.fill();
+    }
     return off;
   }
 
@@ -648,8 +725,11 @@ const Game = (() => {
       const size = p.id === myId ? 7 : 5;
       const px = ox + p.drawX * s;
       const py = oy + p.drawY * s;
-      ctx.fillStyle = COLORS[p.index % 8];
+      ctx.fillStyle = p.color || COLORS[p.index % 8];
       ctx.fillRect(px - size / 2, py - size / 2, size, size);
+      ctx.strokeStyle = '#f1f3f5';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px - size / 2, py - size / 2, size, size);
       if (p.id === myId) {
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1;
@@ -667,5 +747,5 @@ const Game = (() => {
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-  return { start, stop, onState, onEvent, isSpectator, iconURL, COLORS, SYMBOLS };
+  return { start, stop, onState, onEvent, isSpectator, iconURL, COLORS, SHAPES, SYMBOLS };
 })();
