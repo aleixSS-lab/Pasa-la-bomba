@@ -890,8 +890,9 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Al actualizar referencias, `main` tenía una sesión nueva y apareció `game-esprint`, que toca el mismo código de juego y contiene además sus ramas antecesoras `docs-equipo-adriana` y `net-ramas-al-dia`. Según las normas del repositorio, la rama de mapas se basó en esa rama más avanzada.
 - Se reaplicaron los cambios de mapas sobre `game-esprint`; en `server/game.js` se conservaron tanto los temas y puntos de interés como el esprint y su recarga. Se combinaron también las entradas del diario, renumerando las sesiones de mapas como 16–19 para no duplicar las sesiones 12–15 de Aleix.
 - Se mantuvo el prefijo `view-` y el nombre `view-mapas-tematicos`. La rama incluye su cadena de cambios predecesores; el pull request automático tendrá que revisarse con esa base antes de fusionar.
-- Se usará la dirección `noreply` de Adriana como autor del commit; no se usará el correo institucional ni el de Aleix.
+- Se usó la dirección `noreply` de Adriana como autor del commit; no se usó el correo institucional ni el de Aleix.
 - `npm test` pasó con las funciones de mapas y esprint juntas; `git diff --check` no encontró errores.
+- La rama se subió a GitHub y GitHub Actions abrió el pull request [#13](https://github.com/aleixSS-lab/Pasa-la-bomba/pull/13).
 
 **Decisiones y por qué:**
 
@@ -902,4 +903,4 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 
 - Al reaplicar los mapas surgieron conflictos en `DIARIO.md` y en la exportación final de `server/game.js`. Se combinaron las sesiones de ambos autores y se exportan conjuntamente `sprintWait` y `MAP_THEMES`.
 
-**Siguiente paso:** subir `view-mapas-tematicos` y revisar que GitHub haya abierto el pull request automático.
+**Siguiente paso:** revisar el pull request #13 y fusionarlo según `FUSION.md` cuando corresponda.
