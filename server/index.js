@@ -118,6 +118,7 @@ function startGame(room) {
     radius: game.RADIUS,
     gadgetRadius: game.GADGET_RADIUS,
     bombSeconds: CONFIG.BOMB_SECONDS,
+    sprintCooldown: CONFIG.SPRINT_SECONDS + CONFIG.SPRINT_COOLDOWN,
     walls: room.game.walls.map((row) => row.map((w) => (w ? '1' : '0')).join('')),
     gadgets: [...room.game.gadgets.values()],
     players: [...room.game.players.values()].map((p) => ({
@@ -136,6 +137,7 @@ function tick(room) {
   io.to(room.code).emit('state', {
     players: [...g.players.values()].map((p) => ({
       id: p.id, x: Math.round(p.x), y: Math.round(p.y), alive: p.alive, fx: game.effectsOf(g, p),
+      sw: game.sprintWait(g, p),   // segundos para poder esprintar otra vez
     })),
     bomb: {
       holder: g.bomb.holderId,
@@ -212,7 +214,9 @@ io.on('connection', (socket) => {
     const room = myRoom();
     const player = room && room.status === 'playing' && room.game.players.get(socket.id);
     if (!player || !data || typeof data !== 'object') return;
-    player.input = { up: !!data.up, down: !!data.down, left: !!data.left, right: !!data.right };
+    // El esprint es una petición: se guarda hasta que el bucle la atiende, aunque llegue otro mensaje antes.
+    const sprint = !!data.sprint || player.input.sprint;
+    player.input = { up: !!data.up, down: !!data.down, left: !!data.left, right: !!data.right, sprint };
   });
 
   socket.on('leave_room', () => removePlayer(socket));

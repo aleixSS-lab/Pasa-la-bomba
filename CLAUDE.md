@@ -61,6 +61,7 @@ Reglas del juego:
 - Cuando explota, el portador queda eliminado y pasa a ser espectador. Tras una pausa, la bomba siguiente va a otro jugador vivo al azar.
 - Gana el último jugador vivo.
 - Por el suelo hay gadgets que afectan a quien los pisa: **trampa de oso** (inmóvil 1,5 s), **chicle** (mitad de velocidad 3 s) y **acelerador** (velocidad ×1,5 durante 3 s). Al usarse reaparecen en otro sitio.
+- **Esprint** con la tecla Espacio: velocidad ×1,6 durante 1,5 s y después 6 s de recarga. Se suma a los demás efectos, no funciona dentro de una trampa y mantener la tecla no lo repite. Valores en `config.js` (`SPRINT_*`).
 
 La primera versión del juego era de recoger monedas (Coin Rush); se cambió por decisión del alumno. No queda nada de las monedas en el código.
 
@@ -168,10 +169,10 @@ Eventos de Socket.IO (no cambies nombres ni datos sin preguntar):
 |---|---|---|
 | cliente → servidor | `create_room`, `join_room`, `leave_room` | entrar y salir de salas |
 | cliente → servidor | `start_game`, `back_to_lobby` | solo el máster |
-| cliente → servidor | `input` | teclas pulsadas |
+| cliente → servidor | `input` | teclas pulsadas (`up`, `down`, `left`, `right`) y `sprint: true` en el mensaje de la pulsación de Espacio |
 | servidor → cliente | `room_update` | estado de la sala de espera |
-| servidor → cliente | `game_start`, `state`, `game_over` | partida: mapa inicial, posiciones y bomba 20 veces por segundo, resultado |
-| servidor → cliente | `game_event` | sucesos sueltos; su campo `type` es `bomb` (bomba nueva), `pass`, `explosion` o `gadget` |
+| servidor → cliente | `game_start`, `state`, `game_over` | partida: mapa inicial (con `sprintCooldown`), posiciones, efectos (`fx`: `t`, `g`, `b`, `s` = esprint), segundos para el próximo esprint (`sw`) y bomba 20 veces por segundo, resultado |
+| servidor → cliente | `game_event` | sucesos sueltos; su campo `type` es `bomb` (bomba nueva), `pass`, `explosion`, `gadget` o `sprint` |
 
 ## 6. Normas de trabajo
 

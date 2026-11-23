@@ -17,7 +17,8 @@ Abre el enlace, crea una sala y pasa el enlace de invitación a los demás. Est�
 3. Tras una cuenta atrás, un jugador al azar recibe la **bomba**. Su temporizador no se reinicia al pasarla.
 4. Quien la lleva corre un poco más. Para pasarla, **toca a otro jugador**. Quien la acaba de pasar es inmune un instante, y quien la recibe se queda parado un momento, para que no se la devuelvan sin parar.
 5. Cuando la bomba explota, su portador queda **eliminado** y pasa a ser espectador. Poco después, otro jugador vivo recibe una bomba nueva.
-6. **Gana el último vivo.**
+6. Pulsa **Espacio** para esprintar: vas mucho más rápido un momento y después tiene que recargarse.
+7. **Gana el último vivo.**
 
 Gadgets repartidos por el mapa (al pisarlos se gastan y reaparecen en otro sitio):
 
@@ -34,6 +35,7 @@ Los tiempos y multiplicadores exactos están en [`server/config.js`](server/conf
 | Acción | Tecla |
 |---|---|
 | Moverse | **WASD** o **flechas** |
+| Esprint (con recarga) | **Espacio** |
 | Menús y sala de espera | **Tab** y **Enter** |
 
 ## Cómo arrancarlo en tu ordenador

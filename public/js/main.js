@@ -10,6 +10,9 @@ let hudKey = '';        // para no repintar el marcador si no ha cambiado nada
 let bannerText = '';
 let warned = false;     // aviso de «quedan 5 segundos» ya dado en esta bomba
 let toastTimer = null;
+let sprintCooldown = 1;  // segundos totales de esprint + recarga (los envía el servidor)
+let sprintWasWaiting = false;
+let sprintKey = '';
 
 applyI18n();
 document.querySelectorAll('img[data-icon]').forEach((img) => { img.src = Game.iconURL(img.dataset.icon); });
@@ -150,6 +153,32 @@ function renderBanner(bomb) {
   }
 }
 
+// Indicador del esprint: listo, en uso o recargando, con una barra que se llena.
+function renderSprint(state) {
+  const me = state.players.find((p) => p.id === socket.id);
+  const box = $('sprint');
+  box.hidden = !me || !me.alive;
+  if (box.hidden) return;
+  const active = me.fx.includes('s');
+  const wait = me.sw;
+  const key = `${active}|${wait}`;
+  if (key === sprintKey) return;
+  sprintKey = key;
+  let text;
+  if (active) text = t('sprint_active');
+  else if (wait > 0) text = t('sprint_wait', { n: Math.ceil(wait) });
+  else text = t('sprint_ready');
+  $('sprint-state').textContent = text;
+  $('sprint-fill').style.width = `${Math.round((1 - Math.min(1, wait / sprintCooldown)) * 100)}%`;
+  box.classList.toggle('ready', !active && wait === 0);
+  // Aviso para lector de pantalla cuando vuelve a estar listo (solo tras haberlo usado).
+  if (wait > 0) sprintWasWaiting = true;
+  else if (sprintWasWaiting) {
+    sprintWasWaiting = false;
+    announce(t('announce_sprint_ready'));
+  }
+}
+
 function renderResultsControls() {
   $('btn-again').hidden = !isHost();
   $('results-status').textContent = isHost() ? '' : t('wait_host_again', { name: hostName() });
@@ -227,6 +256,9 @@ socket.on('room_update', (data) => {
 socket.on('game_start', (data) => {
   hudKey = '';
   bannerText = '';
+  sprintKey = '';
+  sprintWasWaiting = false;
+  sprintCooldown = data.sprintCooldown || 1;
   $('toast').hidden = true;
   show('game');
   Game.start(data, socket.id, (input) => socket.emit('input', input));
@@ -238,6 +270,7 @@ socket.on('state', (state) => {
   Game.onState(state);
   renderHud(state);
   renderBanner(state.bomb);
+  renderSprint(state);
 });
 
 socket.on('game_event', (event) => {

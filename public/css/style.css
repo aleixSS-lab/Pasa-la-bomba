@@ -154,6 +154,28 @@ body.playing main { padding: 0; display: block; height: 100%; }
 }
 .banner.danger { color: var(--dark); background: var(--danger); border-color: var(--danger); }
 
+/* Indicador del esprint, abajo en el centro: texto y barra de recarga */
+.sprint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  background: rgba(13, 16, 26, 0.92);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sprint.ready { border-color: var(--text); }
+.sprint-bar { display: block; width: 160px; height: 8px; background: #2c365a; border-radius: 4px; overflow: hidden; }
+#sprint-fill { display: block; height: 100%; width: 100%; background: var(--text); }
+
 /* Aviso breve en el centro (bomba recibida, gadget pisado, eliminación) */
 .toast {
   position: absolute;

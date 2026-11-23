@@ -86,6 +86,13 @@ const Game = (() => {
   // ---------- Teclado ----------
 
   function onKey(e) {
+    // Espacio = esprint: se envía una sola petición por pulsación (mantenerla no la repite).
+    if (e.code === 'Space') {
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      e.preventDefault();
+      if (e.type === 'keydown' && !e.repeat && !isSpectator()) sendInput({ ...input, sprint: true });
+      return;
+    }
     const dir = KEYS[e.code];
     if (!dir || e.ctrlKey || e.altKey || e.metaKey) return;
     e.preventDefault();
@@ -178,6 +185,17 @@ const Game = (() => {
     for (const p of players.values()) {
       if (!p.alive) continue;
       const hasBomb = p.id === holderId;
+      if (p.fx.includes('s')) {   // esprint: anillo discontinuo blanco (distinto del anillo rojo de la bomba)
+        ctx.save();
+        ctx.setLineDash([5, 4]);
+        ctx.lineDashOffset = -now / 40;
+        ctx.strokeStyle = '#f1f3f5';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(p.drawX, p.drawY, map.radius + (hasBomb ? 14 : 8), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
       if (hasBomb) {
         ctx.strokeStyle = DANGER;
         ctx.lineWidth = 3;

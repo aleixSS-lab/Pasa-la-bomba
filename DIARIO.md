@@ -8,12 +8,12 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 14, 18-11-2026.*
+*Última actualización: sesión 15, 23-11-2026.*
 
 ## Estado actual
 
 - **Publicado:** https://pasa-la-bomba-0db0.onrender.com (Render, gratis). Se actualiza solo con cada fusión en `main`.
-- **Funciona:** salas con código, sala de espera con máster, mapa aleatorio, bomba, gadgets, eliminación, resultados, endpoint `GET /api/games/:id`, prueba automática (`npm test`) superada en Windows con las librerías reales.
+- **Funciona:** salas con código, sala de espera con máster, mapa aleatorio, bomba, gadgets, esprint con recarga (rama `game-esprint`, sin fusionar), eliminación, resultados, endpoint `GET /api/games/:id`, prueba automática (`npm test`) superada en Windows con las librerías reales.
 - **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
 - **Sin probar:** una partida real entre personas en PC distintos (ya basta con la web de Render). `start.bat` y el túnel quedan como plan B.
 - **Fase:** 4 de 5 (red real y ajuste jugando).
@@ -39,6 +39,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 12 | 18-11 | Lluvia de ideas y reparto de tareas | La IA propuso ~30 mejoras; el alumno las aprobó todas y repartió: Adriana estética y usabilidad, Aleix jugabilidad |
 | 13 | 18-11 | El ordenador de Adriana no aguanta tareas pesadas | Su agente solo hace tareas ligeras (`view-`, docs) sin preguntar; para las pesadas le pregunta antes |
 | 14 | 18-11 | Ramas «behind» en GitHub | Las fusionadas se dejan como foto; la tarea de Windows pone al día sola las ramas sin fusionar que se quedan atrás |
+| 15 | 23-11 | Esprint con tiempo de recarga | Espacio: ×1,6 durante 1,5 s y 6 s de recarga; indicador con barra y aviso para lector de pantalla |
 
 ## 1. Herramientas de IA
 
@@ -67,6 +68,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Que los emoticonos sean tal cual lo que son» | Dibujos en canvas en vez de emojis |
 | «Que los agentes suban todo sin tener que darle clic a un .bat» | El agente pregunta y, con el sí, deja una marca que una tarea de Windows convierte en `git push`; GitHub Actions abre el pull request |
 | «Haz un nuevo documento que haga el rol de normas… verificar un número x de cosas que podemos establecer tú y yo mediante un test» | `FUSION.md`: qué comprobar antes y después de fusionar en `main`, decidido con preguntas tipo test |
+| «Vamos a hacer de mi parte jugabilidad el esprint con tiempo de recarga» | Primera tarea del reparto; los valores los propuso la IA y quedan en `config.js` para ajustarlos jugando |
 | «Mira a ver si nos vendría bien Vercel y Supabase» | La IA leyó su documentación y los descartó; propuso Render, que no obliga a cambiar el código |
 | «Las demás ramas tienen commits behind, arréglalo y si es mejor crear otra función para arreglarse automáticamente hazlo» | La IA vio que «behind» en una rama ya fusionada no es un fallo y preguntó; se automatizó solo lo útil: poner al día las ramas sin fusionar |
 | «Vamos a hacer una lluvia de ideas para añadir funciones y mejoras» | Lista de mejoras por temas con esfuerzo y rama; el alumno la convirtió en el plan de trabajo de las dos últimas semanas |
@@ -719,3 +721,38 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Pendiente de investigar por el alumno:** qué significa *ahead* y *behind* en una rama; qué es un commit de fusión con dos padres; qué es un *git worktree*.
 
 **Siguiente paso:** comprobar en `autosubida.log`, tras la próxima subida, que aparece «Puesta al día…» o un AVISO entendible; fusionar `docs-equipo-adriana` y después `net-ramas-al-dia`.
+
+---
+
+## Sesión 15 — 2026-11-23 — Esprint con tiempo de recarga
+
+**Autor:** Aleix.
+**Herramienta:** Claude en modo Cowork, modelo configurado `claude-opus-5-5`. Misma conversación que las sesiones 7, 8, 10 y 11.
+
+**Qué se pidió:** «Vamos a hacer de mi parte jugabilidad el esprint con tiempo de recarga» (tarea de Aleix en el reparto de la sesión 12).
+
+**Qué se hizo:**
+
+- **Regla nueva:** con la tecla Espacio el jugador va ×1,6 más rápido durante 1,5 s y después tiene 6 s de recarga. Se multiplica con los demás efectos (bomba, chicle, acelerador), no funciona dentro de una trampa de oso y mantener la tecla no lo repite al acabar la recarga. Los tres valores están en `server/config.js` (`SPRINT_FACTOR`, `SPRINT_SECONDS`, `SPRINT_COOLDOWN`).
+- **Servidor** (`server/game.js`, `server/index.js`): el esprint es una petición que el servidor acepta o no, como todo lo demás (servidor autoritativo). Envía a cada jugador los segundos que le faltan para poder repetirlo (`sw`), el efecto `s` mientras dura y un `game_event` de tipo `sprint`.
+- **Cliente:** indicador abajo en el centro («Esprint listo · Espacio», «¡ahora!», «recargando · N s») con una barra que se llena; anillo blanco discontinuo alrededor de quien esprinta, distinto del anillo rojo de la bomba; aviso «Esprint listo» para lector de pantalla al recargarse; Espacio no desplaza la página. Textos en `i18n.js` y ayuda de controles actualizada.
+- **Pruebas:** `npm test` comprueba la velocidad con esprint, la duración, que en recarga no se puede repetir, que la petición se gasta (mantener la tecla no lo dispara solo), que no funciona en la trampa, y que el servidor envía `sw` y la recarga. Prueba en el navegador con dos jugadores y capturas.
+- `CLAUDE.md` (reglas y eventos) y `README.md` (reglas y controles) al día.
+
+**Decisiones y por qué:**
+
+- **La tecla (Espacio) venía del reparto de la sesión 12; los números los propuso la IA sin preguntar** (×1,6, 1,5 s, 6 s): lo bastante para escapar de la bomba o alcanzar a alguien, pero no para usarlo todo el rato. Están en `config.js` para ajustarlos jugando.
+- **Una pulsación = una petición**, gastada aunque no se pueda usar: si no, quien mantuviera Espacio esprintaría solo cada vez que se acaba la recarga.
+- **La recarga empieza al acabar el esprint**, no al pulsar, para que la barra muestre de verdad lo que falta.
+- **Accesibilidad:** el estado se lee en texto (no solo en la barra), el anillo se distingue por forma (discontinuo) y no solo por color, y el aviso para lector de pantalla solo salta al recargarse, para no llenarlo de mensajes.
+- **Rama `game-esprint`** a partir de `net-ramas-al-dia` (sesión 14), la más avanzada sin fusionar, que ya contiene `docs-equipo-adriana` (sesión 13). Hay que fusionarla después de esas dos.
+
+**Qué falló y cómo se arregló:**
+
+- **Al crear la rama, git no pudo cambiar los archivos** porque esta sesión aún no tenía permiso de borrado en la carpeta: la rama se creó pero los archivos se quedaron los de la rama anterior. Se pidió el permiso, se comprobó que lo que había en disco era exactamente `docs-equipo-adriana` (ya guardada en un commit, así que no se perdía nada) y se restauraron los archivos de la rama nueva.
+- **La subida bajo petición lleva parada desde el 18-11.** La marca `.subir-ahora` que dejó la sesión 14 sigue en la carpeta y `autosubida.log` no tiene nada desde entonces, así que `docs-equipo-adriana` y `net-ramas-al-dia` no han llegado a GitHub. El script en sí funciona (probado en las sesiones 8 y 11); lo más probable es que la tarea programada de Windows no se ejecute con el portátil a batería, que es lo que hace por defecto una tarea creada con `schtasks`. Desde el entorno de la IA no se puede comprobar. Se ha avisado al alumno sin tocar nada (norma de fallos fuera de la petición).
+- El indicador y la ayuda de abajo a la izquierda podrían montarse en pantallas muy estrechas; a 1100 px de ancho no se tocan. Se juega en PC, así que se deja así.
+
+**Pendiente de investigar por el alumno:** qué es un *cooldown* (tiempo de recarga) y por qué lo decide el servidor y no el navegador; qué es `event.repeat` en el teclado.
+
+**Siguiente paso:** decidir qué hacer con la tarea programada (ver arriba) para poder subir esta rama y las dos anteriores; jugar con el esprint y ajustar `config.js`; siguiente tarea de jugabilidad: los bots.

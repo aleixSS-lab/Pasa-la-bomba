@@ -115,7 +115,8 @@ function createGame(playerList) {
       x: best.x, y: best.y,
       alive: true, outOrder: 0,       // outOrder: 1 para el primer eliminado, 2 para el segundo...
       frozenUntil: 0, slowUntil: 0, boostUntil: 0, immuneUntil: 0,
-      input: { up: false, down: false, left: false, right: false },
+      sprintUntil: 0, sprintReadyAt: 0,   // esprint: hasta cuándo dura y desde cuándo se puede repetir
+      input: { up: false, down: false, left: false, right: false, sprint: false },
     });
   }
 
@@ -131,6 +132,17 @@ function hitsWall(walls, x, y) {
   return walls[y0][x0] || walls[y0][x1] || walls[y1][x0] || walls[y1][x1];
 }
 
+// Esprint: se pide con una pulsación (input.sprint) y se gasta aunque no se pueda usar,
+// para que mantener la tecla no lo dispare solo al terminar la recarga.
+function trySprint(game, p, events) {
+  if (!p.input.sprint) return;
+  p.input.sprint = false;
+  if (game.time < p.frozenUntil || game.time < p.sprintReadyAt) return;
+  p.sprintUntil = game.time + CONFIG.SPRINT_SECONDS;
+  p.sprintReadyAt = p.sprintUntil + CONFIG.SPRINT_COOLDOWN;
+  events.push({ type: 'sprint', by: p.id });
+}
+
 function movePlayer(game, p, dt) {
   if (game.time < p.frozenUntil) return;
   const dx = (p.input.right ? 1 : 0) - (p.input.left ? 1 : 0);
@@ -141,6 +153,7 @@ function movePlayer(game, p, dt) {
   if (game.bomb.holderId === p.id) speed *= CONFIG.BOMB_SPEED;
   if (game.time < p.slowUntil) speed *= CONFIG.GUM_FACTOR;
   if (game.time < p.boostUntil) speed *= CONFIG.BOOST_FACTOR;
+  if (game.time < p.sprintUntil) speed *= CONFIG.SPRINT_FACTOR;
 
   // Movimiento en pasos pequeños y por ejes, para deslizarse a lo largo de los muros.
   const dist = speed * dt;
@@ -214,6 +227,7 @@ function step(game, dt) {
   game.time += dt;
   const events = [];
   for (const p of alivePlayers(game)) {
+    trySprint(game, p, events);
     movePlayer(game, p, dt);
     useGadgets(game, p, events);
   }
@@ -230,9 +244,15 @@ function findWinner(game) {
   return all.sort((a, b) => b.outOrder - a.outOrder)[0].id;
 }
 
-// Efectos activos de un jugador, para que el cliente los dibuje: t = trampa, g = chicle, b = acelerador.
+// Efectos activos de un jugador, para que el cliente los dibuje: t = trampa, g = chicle, b = acelerador, s = esprint.
 function effectsOf(game, p) {
-  return (game.time < p.frozenUntil ? 't' : '') + (game.time < p.slowUntil ? 'g' : '') + (game.time < p.boostUntil ? 'b' : '');
+  return (game.time < p.frozenUntil ? 't' : '') + (game.time < p.slowUntil ? 'g' : '') + (game.time < p.boostUntil ? 'b' : '')
+    + (game.time < p.sprintUntil ? 's' : '');
 }
 
-module.exports = { createGame, step, effectsOf, TILE, COLS, ROWS, RADIUS, GADGET_RADIUS, SPEED, TICK_MS };
+// Segundos que faltan para poder volver a esprintar (0 = listo).
+function sprintWait(game, p) {
+  return Math.max(0, Math.ceil((p.sprintReadyAt - game.time) * 10) / 10);
+}
+
+module.exports = { createGame, step, effectsOf, sprintWait, TILE, COLS, ROWS, RADIUS, GADGET_RADIUS, SPEED, TICK_MS };

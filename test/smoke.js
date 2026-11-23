@@ -77,6 +77,41 @@ function testRules() {
   assert.ok(a.x > trappedAt + 20, 'después de la trampa debe volver a moverse');
   ok(`trampa de oso: ${CONFIG.TRAP_SECONDS} s sin moverse`);
 
+  // Esprint: más rápido durante SPRINT_SECONDS y después recarga; mantener la tecla no lo repite.
+  g = arena(['A', 'B']);
+  const s = g.players.get('A');
+  s.input.right = true;
+  s.input.sprint = true;
+  let from = s.x;
+  let r0 = run(g, 1);
+  assert.deepStrictEqual(r0.events, [{ type: 'sprint', by: 'A' }]);
+  near(s.x - from, game.SPEED * CONFIG.SPRINT_FACTOR, 4, 'distancia en 1 s de esprint');
+  run(g, CONFIG.SPRINT_SECONDS - 1 + 0.05);   // se acaba el esprint
+  s.input.sprint = true;                      // pedirlo durante la recarga no hace nada...
+  r0 = run(g, 0.1);
+  assert.strictEqual(r0.events.length, 0, 'en recarga no se puede esprintar');
+  assert.strictEqual(s.input.sprint, false, 'la petición se gasta aunque no se pueda usar');
+  from = s.x;
+  run(g, 1);
+  near(s.x - from, game.SPEED, 4, 'velocidad normal durante la recarga');
+  assert.ok(game.sprintWait(g, s) > 0, 'sprintWait cuenta la recarga');
+  run(g, CONFIG.SPRINT_COOLDOWN);             // ...y al acabar la recarga no se dispara solo
+  assert.strictEqual(game.sprintWait(g, s), 0);
+  assert.ok(!game.effectsOf(g, s).includes('s'), 'sin pedirlo otra vez, no hay esprint');
+  s.input.sprint = true;
+  r0 = run(g, 0.05);
+  assert.strictEqual(r0.events[0].type, 'sprint', 'acabada la recarga se puede repetir');
+  // Atrapado en una trampa no se puede esprintar (y la petición no queda guardada).
+  g = arena(['A', 'B']);
+  const tr = g.players.get('A');
+  tr.frozenUntil = 1;
+  tr.input.sprint = true;
+  r0 = run(g, 0.1);
+  assert.strictEqual(r0.events.length, 0, 'en la trampa no se esprinta');
+  run(g, 1);
+  assert.ok(!game.effectsOf(g, tr).includes('s'), 'al salir de la trampa no esprinta solo');
+  ok(`esprint: x${CONFIG.SPRINT_FACTOR} durante ${CONFIG.SPRINT_SECONDS} s, ${CONFIG.SPRINT_COOLDOWN} s de recarga, no se repite solo ni funciona en la trampa`);
+
   // Pasar la bomba al tocar, con inmunidad para quien la acaba de pasar.
   g = arena(['A', 'B']);
   Object.assign(g.players.get('B'), { x: 120, y: 100 });
@@ -195,6 +230,8 @@ async function testNetwork() {
   const state = await once(luis, 'state');
   assert.strictEqual(state.players.length, 3);
   assert.ok('holder' in state.bomb && 'left' in state.bomb && 'pause' in state.bomb);
+  assert.ok(state.players.every((p) => p.sw === 0), 'al empezar todos tienen el esprint listo');
+  assert.ok(map.sprintCooldown > 0, 'el servidor envía la duración de la recarga');
 
   console.log('  … jugando la partida con jugadores automáticos');
   [ana, luis, marta].forEach(attachBot);
