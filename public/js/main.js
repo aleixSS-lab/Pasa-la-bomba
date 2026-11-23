@@ -98,6 +98,7 @@ const isHost = () => room && room.hostId === socket.id;
 
 function renderLobby() {
   $('lobby-code').textContent = room.code;
+  $('lobby-theme').textContent = t(`map_${room.theme || 'forest'}`);
   $('share-url').value = `${shareOrigin}${location.pathname}?sala=${room.code}`;
   $('share-note').textContent = shareNote;
   $('lobby-count').textContent = t('players_count', { n: room.players.length });
@@ -194,7 +195,10 @@ function enterRoom(event, payload) {
   socket.emit(event, { name, ...payload }, (res) => { if (!res.ok) showError(res.error); });
 }
 
-$('btn-create').addEventListener('click', () => enterRoom('create_room', {}));
+$('btn-create').addEventListener('click', () => {
+  const theme = document.querySelector('input[name="theme"]:checked').value;
+  enterRoom('create_room', { theme });
+});
 
 $('form-home').addEventListener('submit', (e) => {
   e.preventDefault();

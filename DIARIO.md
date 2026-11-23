@@ -8,18 +8,18 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 15, 23-11-2026.*
+*Última actualización: sesión 20, 23-11-2026.*
 
 ## Estado actual
 
 - **Publicado:** https://pasa-la-bomba-0db0.onrender.com (Render, gratis). Se actualiza solo con cada fusión en `main`.
-- **Funciona:** salas con código, sala de espera con máster, mapa aleatorio, bomba, gadgets, esprint con recarga (rama `game-esprint`, sin fusionar), eliminación, resultados, endpoint `GET /api/games/:id`, prueba automática (`npm test`) superada en Windows con las librerías reales.
+- **Funciona:** salas con código, tres mapas pixelados elegibles por quien crea la sala, obstáculos y puntos de interés temáticos, más cactus en el desierto, bomba, gadgets, esprint con recarga y el resto de la partida; `npm test` superada en la rama `view-mapas-tematicos`, todavía sin fusionar en `main`.
 - **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
 - **Sin probar:** una partida real entre personas en PC distintos (ya basta con la web de Render). `start.bat` y el túnel quedan como plan B.
 - **Fase:** 4 de 5 (red real y ajuste jugando).
 - **Entrega:** hacia el 2-12-2026.
 - **Idea sin decidir:** versión `.exe` además de la web.
-- **Próximas sesiones (reparto de la sesión 12):** Adriana, estética y usabilidad (`view-`); Aleix, jugabilidad (`game-`). Lista completa en la sesión 12.
+- **Próximas sesiones (reparto de la sesión 12):** Adriana, estética y usabilidad (`view-`); Aleix, jugabilidad (`game-`). Los mapas temáticos pedidos por Adriana están documentados en las sesiones 16–19; lista completa de ideas en la sesión 12.
 
 ## Sesiones
 
@@ -40,6 +40,11 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 13 | 18-11 | El ordenador de Adriana no aguanta tareas pesadas | Su agente solo hace tareas ligeras (`view-`, docs) sin preguntar; para las pesadas le pregunta antes |
 | 14 | 18-11 | Ramas «behind» en GitHub | Las fusionadas se dejan como foto; la tarea de Windows pone al día sola las ramas sin fusionar que se quedan atrás |
 | 15 | 23-11 | Esprint con tiempo de recarga | Espacio: ×1,6 durante 1,5 s y 6 s de recarga; indicador con barra y aviso para lector de pantalla |
+| 16 | 18-11 | Tres mapas pixelados y selección al crear sala | Los jugadores comparten el tema elegido por el máster |
+| 17 | 18-11 | Rediseño visual de los mapas | Árboles, cactus, rocas, columnas y suelos propios por escenario |
+| 18 | 18-11 | Laguna, oasis y fuente central | Un punto de interés decorativo en cada tema |
+| 19 | 18-11 | Más cactus en el desierto | Más grupos de obstáculos y mayor presencia de cactus |
+| 20 | 23-11 | Integrar mapas temáticos con la rama de esprint | Rama visual puesta al día con `game-esprint`; conflictos resueltos conservando ambos cambios |
 
 ## 1. Herramientas de IA
 
@@ -73,6 +78,10 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Las demás ramas tienen commits behind, arréglalo y si es mejor crear otra función para arreglarse automáticamente hazlo» | La IA vio que «behind» en una rama ya fusionada no es un fallo y preguntó; se automatizó solo lo útil: poner al día las ramas sin fusionar |
 | «Vamos a hacer una lluvia de ideas para añadir funciones y mejoras» | Lista de mejoras por temas con esfuerzo y rama; el alumno la convirtió en el plan de trabajo de las dos últimas semanas |
 | «Antes de hacer nada, que lean el repositorio» y «si hay una rama que puedan aprovechar, que salgan de ella» | Varias conversaciones y dos agentes a la vez sin pisarse: cada uno lee lo nuevo y construye encima |
+| «Clóname este repositorio… quiero dos o tres mapas de este estilo y que se pueda elegir la sala» | Selector de mapas pixelados temáticos compartidos por la sala |
+| «Los bloques no tienen por qué ser bloques; adapta los obstáculos a cada mapa» | Árboles, cactus y rocas, columnas rotas y suelos propios |
+| «¿Podrías añadir algún elemento así bonito que pueda ayudar a destacar?» | Laguna, oasis y fuente central |
+| «Cambia el de desierto, hay mucho espacio sin bloques (cactus)» | Más grupos de obstáculos y cactus en el desierto |
 
 ## 4. Qué tuvo que investigar el alumno
 
@@ -88,6 +97,8 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Git: remoto, `commit` frente a `push`, ramas y pull requests.
 - Tareas programadas de Windows y GitHub Actions (automatizar subida y pull requests).
 - Hosting: servidor persistente (Render) frente a funciones *serverless* (Vercel), y qué es un servicio *realtime* como Supabase.
+- Cómo el servidor transmite el tema elegido y cómo Canvas dibuja siluetas pixeladas, texturas y puntos de interés.
+- Cómo reservar zonas decorativas en un mapa aleatorio y ajustar la densidad de obstáculos sin cerrar rutas.
 
 ## 5. Qué no funcionó a la primera
 
@@ -102,6 +113,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - **El usuario pidió usar su Opera** → la extensión no funciona en Opera; se hizo desde Chrome.
 - **Una conversación de la IA trabajaba con copias viejas** de los documentos mientras otras conversaciones avanzaban → la norma de leer el repositorio antes de empezar lo detectó (sesión 9) y no se pisó nada.
 - **Lo que las pruebas automáticas no dicen:** si el juego es divertido o está equilibrado. Hace falta jugar con personas.
+- **Los primeros mapas parecían bloques repetidos y el desierto estaba demasiado vacío** → se redibujaron los obstáculos según cada tema, se añadieron puntos de interés y se aumentó la densidad de cactus.
 
 ---
 
@@ -756,3 +768,138 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Pendiente de investigar por el alumno:** qué es un *cooldown* (tiempo de recarga) y por qué lo decide el servidor y no el navegador; qué es `event.repeat` en el teclado.
 
 **Siguiente paso:** decidir qué hacer con la tarea programada (ver arriba) para poder subir esta rama y las dos anteriores; jugar con el esprint y ajustar `config.js`; siguiente tarea de jugabilidad: los bots.
+
+---
+
+## Sesión 16 — 2026-11-18 — Tres mapas pixelados y selección al crear sala
+
+**Autor:** Adriana.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+**Qué se pidió:**
+
+1. «Cloname este repositorio […] me gustaría hacer un par o tres de mapas distintos de este estilo […] y que el jugador pueda escoger la sala en la que quiere jugar con sus amigos».
+2. «Lee el repositorio otra vez y continua».
+
+**Qué se hizo:**
+
+- Clon del repositorio en la carpeta de trabajo y lectura de `AGENTS.md`, `CLAUDE.md` y `DIARIO.md`.
+- Selector de bosque, desierto o ruinas pixeladas antes de crear sala; el mapa elegido se comparte en la sala y aparece también en la sala de espera.
+- Generación aleatoria con patrón de obstáculos y paleta Canvas distintos por tema. No se añadieron dependencias.
+- README actualizado y prueba de red ampliada para comprobar que el tema elegido llega a la sala y al inicio de partida.
+- Interfaz abierta en navegador local: se creó una sala con el desierto y se confirmó el mismo mapa en la sala de espera.
+
+**Decisiones y por qué:**
+
+- La IA implementó tres temas porque el alumno pidió dos o tres mapas. Quien crea la sala elige el tema; quienes se unen reciben el mismo mapa desde el servidor.
+- Se conservaron cuadrícula, tamaño y reglas del juego. Los temas usan patrones de obstáculos diferentes, sin imágenes ni librerías externas.
+
+**Qué falló y cómo se arregló:**
+
+- La primera comprobación de `npm test` no encontró `socket.io-client`; antes de empezar se repitió la comprobación y pasó con las dependencias locales.
+- El navegador local mostró y confirmó «Desierto pixelado» en la sala de espera después de seleccionarlo.
+- Sigue pendiente el fallo conocido de `GET /api/lan` del servidor descrito en la sesión 5; no forma parte de este cambio y queda sin corregir.
+
+**Pendiente de investigar por el alumno:** cómo el servidor mantiene el tema elegido al crear la sala, y cómo se dibuja un patrón de casillas en Canvas 2D.
+
+**Siguiente paso:** jugar las tres variantes con varias personas, ajustar sus obstáculos y continuar con la prueba de red real pendiente.
+
+## Sesión 17 — 2026-11-18 — Rediseño visual de los mapas
+
+**Autor:** Adriana.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+**Qué se pidió:** «Son horribles, cámbialos ya; los bloques no tienen por qué ser bloques, adapta los bloques a la temática del mapa y mejora los fondos».
+
+**Qué se hizo:**
+
+- El bosque ahora dibuja copas de árboles y hierba con pequeñas variaciones, el desierto cactus, rocas y marcas de viento, y las ruinas columnas rotas, escombros y grietas.
+- Se eliminaron las franjas rectangulares uniformes del suelo y los muros repetidos de ladrillo. Los mapas usan colores y siluetas diferenciados.
+- Se cambiaron también las muestras de mapa del selector para que sugieran cada escenario.
+- Se reemplazaron las vistas previas PNG de bosque, desierto y ruinas por imágenes nuevas acordes con el arte del juego.
+
+**Decisiones y por qué:**
+
+- La IA eligió dibujar elementos por Canvas con formas sencillas y patrones deterministas; no se añadieron imágenes ni dependencias. La petición del alumno fijó que los obstáculos reflejaran cada tema y que el fondo fuera menos artificial.
+
+**Qué falló y cómo se arregló:**
+
+- Las primeras vistas del diseño usaban bloques y texturas cuadradas demasiado repetitivas. Tras la crítica explícita del alumno, se sustituyeron por siluetas temáticas y detalles orgánicos.
+- `npm test` pasó y se revisó la partida local en dos pestañas para bosque, desierto y ruinas. No se esperó a terminar una partida completa en el navegador.
+
+**Pendiente de investigar por el alumno:** cómo se dibuja una copa pixelada con rectángulos Canvas, y cómo una función de ruido determinista mantiene las texturas fijas mientras se mueve la cámara.
+
+**Siguiente paso:** pedir al alumno que revise las nuevas vistas y ajustar tamaño, color o densidad si aún no encajan con la referencia pixel art.
+
+## Sesión 18 — 2026-11-18 — Laguna, oasis y fuente central
+
+**Autor:** Adriana.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+**Qué se pidió:** «¿Podrías añadir algún elemento así bonito que pueda ayudar a destacar?»
+
+**Qué se hizo:**
+
+- Se añadió un punto de interés central distinto para cada mapa: laguna con nenúfares en el bosque, oasis con palmeras en el desierto y fuente de piedra en las ruinas.
+- El generador reserva alrededor de ese elemento una zona abierta; gadgets y apariciones se colocan fuera de ella para mantenerlo visible.
+- La prueba de red comprueba que la zona central está libre y que ningún gadget ni jugador aparece encima del punto de interés.
+
+**Decisiones y por qué:**
+
+- La IA propuso tres elementos naturales/arquitectónicos para reforzar la identidad de cada escenario. Son solo decorativos, no cambian las reglas ni frenan a los jugadores.
+
+**Qué falló y cómo se arregló:**
+
+- No se detectaron fallos en `npm test`. Se amplió la zona libre central para que los adornos no quedaran superpuestos a muros, gadgets o apariciones.
+
+**Pendiente de investigar por el alumno:** cómo se dibujan elipses y formas con Canvas 2D, y por qué separar decoración de colisiones permite que el detalle no cambie las reglas.
+
+**Siguiente paso:** revisar en partida real si el punto de interés se ve con suficiente frecuencia y si su tamaño funciona en pantallas pequeñas.
+
+## Sesión 19 — 2026-11-18 — Más cactus en el desierto
+
+**Autor:** Adriana.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+**Qué se pidió:** «Cambia el de desierto, hay mucho espacio sin bloques (cactus)».
+
+**Qué se hizo:**
+
+- Se aumentó la cantidad de grupos de obstáculos del desierto y la mayoría de las casillas ahora se dibujan como cactus; siguen apareciendo rocas para variar.
+- Se actualizó la vista previa del desierto para reflejar la nueva densidad.
+
+**Decisiones y por qué:**
+
+- La IA mantuvo libre la zona del oasis y elevó la densidad de obstáculos en el resto del mapa, intentando equilibrar el aspecto con espacio suficiente para moverse.
+
+**Qué falló y cómo se arregló:**
+
+- `npm test` pasó, incluida la simulación de una partida completa y las comprobaciones de zonas despejadas, gadgets y apariciones.
+
+**Pendiente de investigar por el alumno:** cómo ajustar la cantidad de obstáculos sin cerrar las rutas entre zonas del tablero.
+
+**Siguiente paso:** revisar si la densidad nueva de cactus se siente mejor al jugar.
+
+---
+
+## Sesión 20 — 2026-11-23 — Integrar mapas temáticos con la rama de esprint
+
+**Autor:** Adriana.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+
+**Qué se pidió:** continuar la subida de `view-mapas-tematicos` tras facilitar la dirección anónima de GitHub.
+
+**Qué se hizo:**
+
+- Al actualizar referencias, `main` tenía una sesión nueva y apareció `game-esprint`, que toca el mismo código de juego y contiene además sus ramas antecesoras `docs-equipo-adriana` y `net-ramas-al-dia`. Según las normas del repositorio, la rama de mapas se basó en esa rama más avanzada.
+- Se reaplicaron los cambios de mapas sobre `game-esprint`; en `server/game.js` se conservaron tanto los temas y puntos de interés como el esprint y su recarga. Se combinaron también las entradas del diario, renumerando las sesiones de mapas como 16–19 para no duplicar las sesiones 12–15 de Aleix.
+- Se mantuvo el prefijo `view-` y el nombre `view-mapas-tematicos`. La rama incluye su cadena de cambios predecesores; el pull request automático tendrá que revisarse con esa base antes de fusionar.
+- Se usará la dirección `noreply` de Adriana como autor del commit; no se usará el correo institucional ni el de Aleix.
+- `npm test` pasó con las funciones de mapas y esprint juntas; `git diff --check` no encontró errores.
+
+**Decisiones y por qué:**
+
+- Se partió de `game-esprint`, y no del `main` recién actualizado, porque es la rama más avanzada que toca los mismos archivos y las normas piden aprovecharla. Esto mantiene su cadena de trabajo y evita perder el esprint.
+- La subida autorizada corresponde solo a la rama `view-mapas-tematicos`; no se fusiona `main`.
+
+**Qué falló y cómo se arregló:**
+
+- Al reaplicar los mapas surgieron conflictos en `DIARIO.md` y en la exportación final de `server/game.js`. Se combinaron las sesiones de ambos autores y se exportan conjuntamente `sprintWait` y `MAP_THEMES`.
+
+**Siguiente paso:** subir `view-mapas-tematicos` y revisar que GitHub haya abierto el pull request automático.

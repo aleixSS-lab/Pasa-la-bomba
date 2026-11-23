@@ -20,6 +20,13 @@
         <label for="name" data-i18n="name_label"></label>
         <input id="name" type="text" maxlength="12" autocomplete="nickname">
 
+        <fieldset class="map-picker">
+          <legend data-i18n="map_title"></legend>
+          <label class="map-option forest-option"><input type="radio" name="theme" value="forest" checked><span data-i18n="map_forest"></span></label>
+          <label class="map-option desert-option"><input type="radio" name="theme" value="desert"><span data-i18n="map_desert"></span></label>
+          <label class="map-option ruins-option"><input type="radio" name="theme" value="ruins"><span data-i18n="map_ruins"></span></label>
+        </fieldset>
+
         <button type="button" id="btn-create" class="primary" data-i18n="create_room"></button>
 
         <p class="separator" data-i18n="or_join"></p>
@@ -52,6 +59,7 @@
     <section id="screen-lobby" class="card" aria-labelledby="lobby-title" hidden>
       <h1 id="lobby-title" tabindex="-1" data-i18n="lobby_title"></h1>
       <p class="code-line"><span data-i18n="room_code"></span> <strong id="lobby-code"></strong></p>
+      <p class="room-theme"><span data-i18n="room_map"></span> <strong id="lobby-theme"></strong></p>
 
       <label for="share-url" data-i18n="share_label"></label>
       <div class="row">

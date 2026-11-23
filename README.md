@@ -12,7 +12,7 @@ Abre el enlace, crea una sala y pasa el enlace de invitación a los demás. Est�
 
 ## Cómo se juega
 
-1. Escribe un apodo y **crea una sala** o **únete** con un código de 4 letras (o con el enlace de invitación).
+1. Escribe un apodo y **crea una sala**, eligiendo uno de los tres mapas pixelados, o **únete** con un código de 4 letras (o con el enlace de invitación). Todas las personas de la sala juegan en el mapa que eligió quien la creó.
 2. Quien crea la sala es el **máster**: cuando estén todos en la sala de espera, inicia la partida.
 3. Tras una cuenta atrás, un jugador al azar recibe la **bomba**. Su temporizador no se reinicia al pasarla.
 4. Quien la lleva corre un poco más. Para pasarla, **toca a otro jugador**. Quien la acaba de pasar es inmune un instante, y quien la recibe se queda parado un momento, para que no se la devuelvan sin parar.
@@ -98,7 +98,7 @@ La partida en tiempo real va por **WebSockets** (Socket.IO). Los eventos están 
 - **Publicación:** Render, plan gratuito. Cada cambio que se fusiona en la rama `main` se publica solo.
 - **Flujo de trabajo:** una rama por cambio; al subirla, GitHub Actions abre el pull request a `main` automáticamente, y el otro coautor lo revisa y lo fusiona.
 - **Sin login ni base de datos:** apodo y código de sala; todo vive en memoria.
-- **Mapa:** cuadrícula de 40×30 casillas con muros al azar; los jugadores y los gadgets solo aparecen en casillas alcanzables.
+- **Mapas:** bosque con árboles y una laguna, desierto con cactus, rocas y un oasis, y ruinas con columnas rotas y una fuente antigua. Cada tema tiene su propio terreno y obstáculos; el tablero se genera al azar y los jugadores y gadgets aparecen en zonas alcanzables.
 
 ```
 server/   index.js (salas, WebSockets y API) · game.js (reglas, sin red) · config.js (valores ajustables)

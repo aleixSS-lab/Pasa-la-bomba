@@ -178,7 +178,7 @@ async function testNetwork() {
 
   // --- Sala de espera ---
   assert.strictEqual((await ask(ana, 'create_room', { name: '   ' })).error, 'invalid_name');
-  const created = await ask(ana, 'create_room', { name: 'Ana' });
+  const created = await ask(ana, 'create_room', { name: 'Ana', theme: 'desert' });
   assert.ok(created.ok && /^[A-Z]{4}$/.test(created.code));
   const code = created.code;
   ok(`sala creada con código ${code}`);
@@ -190,7 +190,9 @@ async function testNetwork() {
 
   const update = once(ana, 'room_update');
   assert.ok((await ask(luis, 'join_room', { name: 'Luis', code: code.toLowerCase() })).ok);
-  assert.strictEqual((await update).players.length, 2);
+  const lobbyUpdate = await update;
+  assert.strictEqual(lobbyUpdate.players.length, 2);
+  assert.strictEqual(lobbyUpdate.theme, 'desert');
   assert.ok((await ask(marta, 'join_room', { name: 'Marta', code })).ok);
   assert.strictEqual((await ask(luis, 'start_game')).error, 'not_host');
   ok('se unen dos jugadores más y solo el máster puede empezar');
@@ -210,6 +212,8 @@ async function testNetwork() {
   assert.ok((await ask(ana, 'start_game')).ok);
   const maps = await starts;
   const map = maps[0];
+  assert.strictEqual(map.theme, 'desert');
+  assert.ok(map.landmark && map.landmark.x > 0 && map.landmark.y > 0);
   assert.strictEqual(map.gadgets.length, 3 * CONFIG.GADGETS_PER_TYPE);
   for (const type of ['trap', 'gum', 'boost']) {
     assert.strictEqual(map.gadgets.filter((g) => g.type === type).length, CONFIG.GADGETS_PER_TYPE);
@@ -217,8 +221,16 @@ async function testNetwork() {
   assert.strictEqual(map.players.length, 3);
   assert.strictEqual(new Set(map.players.map((p) => `${p.x},${p.y}`)).size, 3);
   assert.ok(maps.every((m) => JSON.stringify(m.walls) === JSON.stringify(map.walls)));
+  for (let y = Math.floor(map.rows / 2) - 4; y <= Math.floor(map.rows / 2) + 4; y++) {
+    for (let x = Math.floor(map.cols / 2) - 4; x <= Math.floor(map.cols / 2) + 4; x++) {
+      assert.strictEqual(map.walls[y][x], '0');
+    }
+  }
   for (const item of [...map.gadgets, ...map.players]) {
     assert.strictEqual(map.walls[Math.floor(item.y / map.tile)][Math.floor(item.x / map.tile)], '0');
+    const cellX = Math.floor(item.x / map.tile);
+    const cellY = Math.floor(item.y / map.tile);
+    assert.ok(Math.abs(cellX - map.cols / 2) > 4 || Math.abs(cellY - map.rows / 2) > 4);
   }
   ok('mapa aleatorio igual para todos: 24 gadgets y 3 apariciones distintas, nada dentro de un muro');
 

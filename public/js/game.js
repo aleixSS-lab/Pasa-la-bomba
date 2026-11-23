@@ -8,9 +8,11 @@ const Game = (() => {
   const SYMBOLS = ['●', '■', '▲', '◆', '★', '⬢', '✚', '⬟'];
   // Efectos activos que envía el servidor para cada jugador: t = trampa, g = chicle, b = acelerador.
   const EFFECTS = { t: 'trap', g: 'gum', b: 'boost' };
-  const FLOOR = '#1b2033';
-  const WALL = '#6b7fc4';
-  const WALL_EDGE = '#8fa0dd';
+  const THEMES = {
+    forest: { floor: '#82bd68', detail: '#a1cf75', shade: '#639d59', obstacle: '#286044' },
+    desert: { floor: '#e7ca83', detail: '#f0d999', shade: '#c7a965', obstacle: '#8c573a' },
+    ruins: { floor: '#8a9691', detail: '#a5aaa0', shade: '#737f7c', obstacle: '#484d5c' },
+  };
   const DARK = '#0d101a';
   const DANGER = '#ff6b6b';
   const KEYS = {
@@ -152,8 +154,10 @@ const Game = (() => {
     ctx.save();
     ctx.translate(-Math.round(camX), -Math.round(camY));
 
-    ctx.fillStyle = FLOOR;
+    const colors = THEMES[map.theme] || THEMES.forest;
+    ctx.fillStyle = colors.floor;
     ctx.fillRect(0, 0, mapW, mapH);
+    drawFloor(ctx, map.theme, camX, camY, w, h, mapW, mapH, map.tile);
 
     // Solo se dibujan los muros visibles.
     const T = map.tile;
@@ -164,12 +168,11 @@ const Game = (() => {
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         if (map.walls[y][x] !== '1') continue;
-        ctx.fillStyle = WALL;
-        ctx.fillRect(x * T, y * T, T, T);
-        ctx.fillStyle = WALL_EDGE;
-        ctx.fillRect(x * T, y * T, T, 5);
+        drawObstacle(ctx, map.theme, x * T, y * T, T, x, y);
       }
     }
+
+    drawLandmark(ctx, map.theme, map.landmark);
 
     // Gadgets: cada uno dibujado como lo que es, sobre una sombra para que destaque del suelo.
     ctx.textAlign = 'center';
@@ -231,6 +234,154 @@ const Game = (() => {
     ctx.restore();
 
     drawMinimap(w, h);
+  }
+
+  function noise(x, y, salt = 0) {
+    const n = Math.sin(x * 127.1 + y * 311.7 + salt * 74.7) * 43758.5453;
+    return n - Math.floor(n);
+  }
+
+  function drawFloor(c, theme, camX, camY, w, h, mapW, mapH, tile) {
+    const x0 = Math.max(0, Math.floor(camX / tile));
+    const x1 = Math.min(Math.ceil(mapW / tile), Math.floor((camX + w) / tile) + 1);
+    const y0 = Math.max(0, Math.floor(camY / tile));
+    const y1 = Math.min(Math.ceil(mapH / tile), Math.floor((camY + h) / tile) + 1);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const n = noise(x, y, 3);
+      const px = x * tile + 5 + noise(x, y, 4) * (tile - 12);
+      const py = y * tile + 5 + noise(x, y, 5) * (tile - 12);
+      if (theme === 'forest') {
+        // Briznas pequeñas e irregulares: el suelo parece hierba, no un tablero cuadriculado.
+        c.fillStyle = n > 0.55 ? '#619f58' : '#aad279';
+        c.fillRect(px, py, 2, 5);
+        c.fillRect(px + 3, py + 2, 2, 3);
+        if (n > 0.91) { c.fillStyle = '#f3d886'; c.fillRect(px + 7, py + 1, 3, 3); }
+      } else if (theme === 'desert') {
+        // Marcas de viento y piedrecillas dispersas sobre arena continua.
+        c.fillStyle = n > 0.5 ? '#d4b875' : '#f3dda0';
+        c.fillRect(px, py, 9 + n * 9, 2);
+        c.fillRect(px + 3, py + 4, 5 + n * 5, 2);
+        if (n > 0.82) { c.fillStyle = '#a77b52'; c.fillRect(px + 16, py + 8, 4, 3); }
+      } else {
+        // Grietas finas y manchas de piedra gastada, sin cuadrícula repetitiva.
+        c.strokeStyle = n > 0.5 ? '#727f7c' : '#b2b3a7';
+        c.lineWidth = 1.5;
+        c.beginPath(); c.moveTo(px, py); c.lineTo(px + 5, py + 2); c.lineTo(px + 8, py + 7); c.stroke();
+        if (n > 0.72) { c.fillStyle = '#737b78'; c.fillRect(px + 12, py + 9, 4, 2); }
+      }
+    }
+  }
+
+  function drawObstacle(c, theme, x, y, size, gx, gy) {
+    const n = noise(gx, gy, 8);
+    c.save();
+    if (theme === 'forest') {
+      // Árbol visto desde arriba: sombra, tronco corto y copa redondeada a píxeles.
+      c.fillStyle = 'rgba(31, 68, 48, 0.28)';
+      c.beginPath(); c.ellipse(x + size / 2 + 3, y + size / 2 + 5, 16, 11, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#79543b'; c.fillRect(x + 16, y + 22, 9, 12);
+      const pattern = ['0011100', '0111110', '1111111', '1111111', '1111111', '0111110', '0011100'];
+      const greens = n > 0.66 ? ['#174b3b', '#236044', '#32734b', '#4b8953'] : ['#1d573f', '#286b46', '#3b804d', '#579653'];
+      pattern.forEach((row, ry) => [...row].forEach((cell, rx) => {
+        if (cell !== '1') return;
+        const colorIndex = noise(gx * 7 + rx, gy * 7 + ry, 2) > 0.72 ? 3 : (noise(gx * 7 + rx, gy * 7 + ry, 1) > 0.48 ? 2 : 1);
+        c.fillStyle = greens[colorIndex];
+        c.fillRect(x + 2 + rx * 5, y + 2 + ry * 5, 5, 5);
+      }));
+      c.fillStyle = '#b1d76b';
+      c.fillRect(x + (n > 0.5 ? 12 : 22), y + 9, 5, 4);
+      c.fillRect(x + (n > 0.5 ? 22 : 10), y + 24, 4, 4);
+    } else if (theme === 'desert' && n > 0.35) {
+      // Cactus pixelado: silueta fácil de reconocer sobre la arena.
+      c.fillStyle = 'rgba(85, 62, 38, 0.25)';
+      c.beginPath(); c.ellipse(x + 22, y + 33, 13, 5, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#24674d'; c.fillRect(x + 16, y + 8, 9, 25);
+      c.fillStyle = '#39835b'; c.fillRect(x + 18, y + 8, 5, 23);
+      c.fillRect(x + 9, y + 15, 7, 5); c.fillRect(x + 9, y + 12, 5, 7);
+      c.fillRect(x + 25, y + 20, 7, 5); c.fillRect(x + 27, y + 16, 5, 8);
+      c.fillStyle = '#a9c975'; c.fillRect(x + 19, y + 10, 2, 14);
+    } else if (theme === 'desert') {
+      // Rocas redondeadas en vez de muros rectangulares.
+      const rows = ['0011100', '0111110', '1111111', '1111111', '0111110'];
+      const rockColors = n > 0.5 ? ['#875136', '#ad7046', '#c08a58'] : ['#9a5b3d', '#bd7a4d', '#d19a61'];
+      c.fillStyle = 'rgba(99, 68, 42, 0.23)';
+      c.beginPath(); c.ellipse(x + 21, y + 32, 17, 5, 0, 0, Math.PI * 2); c.fill();
+      rows.forEach((row, ry) => [...row].forEach((cell, rx) => {
+        if (cell !== '1') return;
+        c.fillStyle = rockColors[(rx + ry + Math.floor(n * 3)) % rockColors.length];
+        c.fillRect(x + 2 + rx * 5, y + 8 + ry * 5, 5, 5);
+      }));
+      c.fillStyle = '#e1b77d'; c.fillRect(x + 12, y + 12, 7, 3);
+    } else {
+      // Restos de columnas y sillares rotos, con grietas oscuras.
+      c.fillStyle = 'rgba(42, 45, 54, 0.3)';
+      c.beginPath(); c.ellipse(x + 23, y + 33, 17, 5, 0, 0, Math.PI * 2); c.fill();
+      if (n > 0.65) {
+        c.fillStyle = '#57596a'; c.fillRect(x + 9, y + 5, 22, 29);
+        c.fillStyle = '#aaa7a0'; c.fillRect(x + 7, y + 5, 25, 7);
+        c.fillStyle = '#77798a'; c.fillRect(x + 12, y + 14, 16, 16);
+        c.fillStyle = '#4e5061'; c.fillRect(x + 9, y + 30, 22, 5);
+        c.fillStyle = '#c2bba9'; c.fillRect(x + 12, y + 7, 5, 3);
+        c.strokeStyle = '#383c49'; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(x + 23, y + 12); c.lineTo(x + 19, y + 19); c.lineTo(x + 23, y + 23); c.stroke();
+      } else {
+        c.fillStyle = '#6a6c7b'; c.fillRect(x + 6, y + 14, 28, 15);
+        c.fillStyle = '#99999b'; c.fillRect(x + 8, y + 11, 13, 8);
+        c.fillStyle = '#4c505e'; c.fillRect(x + 22, y + 21, 11, 10);
+        c.fillStyle = '#b0aa9b'; c.fillRect(x + 12, y + 13, 7, 3);
+        c.strokeStyle = '#414550'; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(x + 18, y + 15); c.lineTo(x + 22, y + 20); c.lineTo(x + 18, y + 27); c.stroke();
+      }
+    }
+    c.restore();
+  }
+
+  function drawLandmark(c, theme, landmark) {
+    if (!landmark) return;
+    const { x, y } = landmark;
+    c.save();
+    if (theme === 'forest') {
+      // Laguna rodeada de hierba, nenúfares y flores pequeñas.
+      c.fillStyle = '#6c9c58'; c.beginPath(); c.ellipse(x, y + 5, 78, 56, -0.08, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#c6b77c'; c.beginPath(); c.ellipse(x, y, 72, 49, -0.08, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#4ba7a0'; c.beginPath(); c.ellipse(x, y - 2, 65, 42, -0.08, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#79c9b0';
+      c.fillRect(x - 32, y - 20, 24, 3); c.fillRect(x + 12, y + 11, 28, 3); c.fillRect(x + 30, y - 25, 12, 3);
+      for (const [dx, dy] of [[-35, 8], [24, -13], [4, 24]]) {
+        c.fillStyle = '#397b50'; c.beginPath(); c.ellipse(x + dx, y + dy, 9, 5, -0.3, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#f783ac'; c.fillRect(x + dx - 2, y + dy - 5, 4, 4);
+        c.fillStyle = '#ffd43b'; c.fillRect(x + dx - 1, y + dy - 4, 2, 2);
+      }
+    } else if (theme === 'desert') {
+      // Oasis azul verdosa, con una orilla dorada y dos palmeras.
+      c.fillStyle = 'rgba(93, 68, 39, 0.2)'; c.beginPath(); c.ellipse(x, y + 14, 82, 49, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#c39a59'; c.beginPath(); c.ellipse(x, y + 5, 78, 47, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#43a99d'; c.beginPath(); c.ellipse(x, y + 2, 67, 38, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#8ed6ba'; c.fillRect(x - 26, y - 7, 22, 3); c.fillRect(x + 8, y + 9, 28, 3);
+      for (const side of [-1, 1]) {
+        const px = x + side * 52; const py = y - 27;
+        c.strokeStyle = '#79543b'; c.lineWidth = 5; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(px, py + 28); c.quadraticCurveTo(px + side * 3, py + 12, px - side * 2, py); c.stroke();
+        c.strokeStyle = '#39835b'; c.lineWidth = 5;
+        for (const angle of [-2.75, -2.15, -1.57, -0.95, -0.35]) {
+          c.beginPath(); c.moveTo(px - side * 2, py);
+          c.quadraticCurveTo(px + Math.cos(angle) * 10, py + Math.sin(angle) * 8, px + Math.cos(angle) * 22, py + Math.sin(angle) * 15);
+          c.stroke();
+        }
+      }
+    } else {
+      // Fuente antigua con borde de piedra, agua y un pedestal central agrietado.
+      c.fillStyle = 'rgba(48, 51, 61, 0.25)'; c.beginPath(); c.ellipse(x, y + 9, 79, 57, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#777a83'; c.beginPath(); c.ellipse(x, y, 76, 54, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#b1aa98'; c.beginPath(); c.ellipse(x, y - 4, 68, 47, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#438f91'; c.beginPath(); c.ellipse(x, y - 5, 57, 37, 0, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = '#d0c5ad'; c.lineWidth = 3; c.beginPath(); c.ellipse(x, y - 5, 60, 40, 0, 0, Math.PI * 2); c.stroke();
+      c.fillStyle = '#696d7a'; c.fillRect(x - 11, y - 18, 22, 30);
+      c.fillStyle = '#aaa797'; c.fillRect(x - 16, y - 22, 32, 7);
+      c.fillStyle = '#d3c8b2'; c.fillRect(x - 7, y - 19, 5, 18);
+      c.fillStyle = '#8bd0bd'; c.fillRect(x - 38, y + 2, 18, 3); c.fillRect(x + 21, y - 13, 22, 3);
+    }
+    c.restore();
   }
 
   function label(text, x, y, color) {
@@ -471,9 +622,10 @@ const Game = (() => {
     off.width = map.cols * MINI;
     off.height = map.rows * MINI;
     const c = off.getContext('2d');
+    const colors = THEMES[map.theme] || THEMES.forest;
     c.fillStyle = 'rgba(13, 16, 26, 0.85)';
     c.fillRect(0, 0, off.width, off.height);
-    c.fillStyle = WALL;
+    c.fillStyle = colors.obstacle;
     map.walls.forEach((row, y) => {
       for (let x = 0; x < row.length; x++) if (row[x] === '1') c.fillRect(x * MINI, y * MINI, MINI, MINI);
     });

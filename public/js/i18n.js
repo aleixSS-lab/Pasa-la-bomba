@@ -6,6 +6,10 @@ const I18N = {
     title: 'Pasa la bomba',
     tagline: 'Que no te explote encima: sé el último en pie.',
     name_label: 'Tu apodo',
+    map_title: 'Elige el mapa al crear la sala',
+    map_forest: 'Bosque pixelado',
+    map_desert: 'Desierto pixelado',
+    map_ruins: 'Ruinas pixeladas',
     create_room: 'Crear sala',
     or_join: 'o únete a una sala',
     code_label: 'Código de sala',
@@ -21,6 +25,7 @@ const I18N = {
 
     lobby_title: 'Sala de espera',
     room_code: 'Código de sala:',
+    room_map: 'Mapa:',
     share_label: 'Enlace para invitar',
     copy: 'Copiar',
     copied: 'Enlace copiado',

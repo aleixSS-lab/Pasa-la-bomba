@@ -11,22 +11,36 @@ const GADGET_RADIUS = 13;
 const SPEED = 220;        // píxeles por segundo
 const TICK_MS = 50;       // el servidor avanza 20 veces por segundo
 const GADGET_TYPES = ['trap', 'gum', 'boost'];
+const MAP_THEMES = ['forest', 'desert', 'ruins'];
+const LANDMARK_CLEARANCE = 4;
 
 const rand = (n) => Math.floor(Math.random() * n);
 
 // Genera muros aleatorios y devuelve también las casillas libres alcanzables.
 // Si el mapa queda demasiado partido, se descarta y se genera otro.
-function generateMap() {
+function generateMap(theme) {
+  const layouts = {
+    forest: { blocks: 45, minSize: 1, sizeRange: 3 },
+    desert: { blocks: 52, minSize: 2, sizeRange: 3 },
+    ruins: { blocks: 58, minSize: 1, sizeRange: 2 },
+  };
+  const layout = layouts[theme] || layouts.forest;
+  const landmarkCellX = Math.floor(COLS / 2);
+  const landmarkCellY = Math.floor(ROWS / 2);
   for (;;) {
     const walls = Array.from({ length: ROWS }, (_, y) =>
       Array.from({ length: COLS }, (_, x) => x === 0 || y === 0 || x === COLS - 1 || y === ROWS - 1));
 
-    for (let i = 0; i < 45; i++) {
-      const w = 1 + rand(3);
-      const h = 1 + rand(3);
+    for (let i = 0; i < layout.blocks; i++) {
+      const w = layout.minSize + rand(layout.sizeRange);
+      const h = layout.minSize + rand(layout.sizeRange);
       const x0 = 1 + rand(COLS - 1 - w);
       const y0 = 1 + rand(ROWS - 1 - h);
-      for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) walls[y][x] = true;
+      for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) {
+        const nearLandmark = Math.abs(x - landmarkCellX) <= LANDMARK_CLEARANCE
+          && Math.abs(y - landmarkCellY) <= LANDMARK_CLEARANCE;
+        if (!nearLandmark) walls[y][x] = true;
+      }
     }
 
     const free = [];
@@ -47,7 +61,15 @@ function generateMap() {
       }
     }
 
-    if (reachable.length >= free.length * 0.9) return { walls, reachable };
+    if (reachable.length >= free.length * 0.9) {
+      const placementCells = reachable.filter(([x, y]) =>
+        Math.abs(x - landmarkCellX) > LANDMARK_CLEARANCE || Math.abs(y - landmarkCellY) > LANDMARK_CLEARANCE);
+      return {
+        walls,
+        reachable: placementCells,
+        landmark: { x: (landmarkCellX + 0.5) * TILE, y: (landmarkCellY + 0.5) * TILE },
+      };
+    }
   }
 }
 
@@ -73,8 +95,9 @@ function respawnGadget(game, type) {
 }
 
 // Crea una partida nueva para la lista de jugadores [{id, name, index}].
-function createGame(playerList) {
-  const { walls, reachable } = generateMap();
+function createGame(playerList, theme = 'forest') {
+  if (!MAP_THEMES.includes(theme)) theme = 'forest';
+  const { walls, reachable, landmark } = generateMap(theme);
 
   // Barajar las casillas alcanzables: las primeras son gadgets, el resto posibles apariciones.
   for (let i = reachable.length - 1; i > 0; i--) {
@@ -83,7 +106,7 @@ function createGame(playerList) {
   }
 
   const game = {
-    walls, reachable,
+    walls, reachable, theme, landmark,
     gadgets: new Map(), nextGadgetId: 0,
     players: new Map(),
     time: 0,
@@ -255,4 +278,4 @@ function sprintWait(game, p) {
   return Math.max(0, Math.ceil((p.sprintReadyAt - game.time) * 10) / 10);
 }
 
-module.exports = { createGame, step, effectsOf, sprintWait, TILE, COLS, ROWS, RADIUS, GADGET_RADIUS, SPEED, TICK_MS };
+module.exports = { createGame, step, effectsOf, sprintWait, TILE, COLS, ROWS, RADIUS, GADGET_RADIUS, SPEED, TICK_MS, MAP_THEMES };

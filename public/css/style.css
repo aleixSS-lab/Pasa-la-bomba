@@ -77,6 +77,16 @@ button.primary:hover { background: #ffe066; }
 button:disabled { color: var(--muted); background: #262b3d; border-color: #262b3d; cursor: not-allowed; }
 #btn-create { width: 100%; margin-top: 16px; }
 
+.map-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0 4px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; }
+.map-picker legend { padding: 0 6px; font-weight: 700; }
+.map-option { display: flex; min-height: 72px; align-items: end; padding: 8px; margin: 0; border: 2px solid var(--line); border-radius: 8px; cursor: pointer; font-size: 0.85rem; line-height: 1.2; }
+.map-option input { width: auto; min-height: auto; margin: 0 6px 2px 0; accent-color: var(--gold); }
+.map-option:has(input:checked) { outline: 3px solid var(--focus); outline-offset: 1px; }
+.map-option span { color: #fff; text-shadow: 0 1px 3px #111827, 0 0 3px #111827; }
+.forest-option { background: radial-gradient(circle at 22% 30%, #286044 0 9px, transparent 10px), radial-gradient(circle at 56% 64%, #32734b 0 12px, transparent 13px), radial-gradient(circle at 84% 22%, #236044 0 8px, transparent 9px), linear-gradient(145deg, #9ac875, #639d59); }
+.desert-option { background: radial-gradient(ellipse at 68% 30%, #ad7046 0 8px, transparent 9px), radial-gradient(ellipse at 24% 70%, #bd7a4d 0 6px, transparent 7px), linear-gradient(165deg, transparent 42%, #f0d999 43% 56%, transparent 57%), #c7a965; }
+.ruins-option { background: linear-gradient(110deg, transparent 35%, #737f7c 36% 40%, transparent 41%), linear-gradient(24deg, transparent 57%, #a5aaa0 58% 63%, transparent 64%), radial-gradient(ellipse at 70% 30%, #686b7b 0 9px, transparent 10px), #737f7c; }
+
 /* Foco siempre visible para quien navega con teclado */
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
@@ -94,6 +104,7 @@ a { color: var(--focus); }
 #api-link { display: inline-block; margin-top: 12px; }
 
 .code-line { font-size: 1.1rem; }
+.room-theme { color: var(--muted); }
 .code-line strong { font-size: 1.6rem; letter-spacing: 0.25em; color: var(--gold); margin-left: 6px; }
 
 /* Listas de jugadores: sala de espera, marcador y clasificación */

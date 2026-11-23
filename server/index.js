@@ -52,6 +52,7 @@ function cleanName(value) {
 function publicRoom(room) {
   return {
     code: room.code,
+    theme: room.theme,
     hostId: room.hostId,
     status: room.status,
     players: [...room.players.values()],
@@ -107,7 +108,7 @@ function removePlayer(socket) {
 // ---------- Partida ----------
 
 function startGame(room) {
-  room.game = game.createGame([...room.players.values()]);
+  room.game = game.createGame([...room.players.values()], room.theme);
   room.status = 'playing';
   room.winner = null;
 
@@ -117,6 +118,8 @@ function startGame(room) {
     rows: game.ROWS,
     radius: game.RADIUS,
     gadgetRadius: game.GADGET_RADIUS,
+    theme: room.theme,
+    landmark: room.game.landmark,
     bombSeconds: CONFIG.BOMB_SECONDS,
     sprintCooldown: CONFIG.SPRINT_SECONDS + CONFIG.SPRINT_COOLDOWN,
     walls: room.game.walls.map((row) => row.map((w) => (w ? '1' : '0')).join('')),
@@ -167,8 +170,9 @@ io.on('connection', (socket) => {
     const name = cleanName(data && data.name);
     if (!name) return reply(ack, { ok: false, error: 'invalid_name' });
     removePlayer(socket);
+    const theme = game.MAP_THEMES.includes(data && data.theme) ? data.theme : 'forest';
     const room = {
-      code: newCode(), hostId: socket.id, status: 'lobby',
+      code: newCode(), theme, hostId: socket.id, status: 'lobby',
       players: new Map(), game: null, timer: null, winner: null,
     };
     rooms.set(room.code, room);
