@@ -8,12 +8,12 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 21, 23-11-2026.*
+*Última actualización: sesión 22, 23-11-2026.*
 
 ## Estado actual
 
 - **Publicado:** https://pasa-la-bomba-0db0.onrender.com (Render, gratis). Se actualiza solo con cada fusión en `main`.
-- **Funciona:** salas con código, selector de mapa en creación y sala de espera, cinco estanques teletransportadores de varias formas y tamaños por mapa, skins con forma y color elegibles, bomba, gadgets, esprint y el resto de la partida. `npm test` pasa en `game-estanques-personalizacion`, todavía local y sin subir.
+- **Funciona:** salas con código, selector de mapa en creación y sala de espera, cinco estanques teletransportadores de varias formas y tamaños por mapa, skins con forma y color elegibles, bomba, gadgets, esprint y el resto de la partida. La rama `game-estanques-personalizacion` está subida; los cambios visuales de `view-sala-neon` están pendientes de subir.
 - **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
 - **Sin probar:** una partida real entre personas en PC distintos (ya basta con la web de Render). `start.bat` y el túnel quedan como plan B.
 - **Fase:** 4 de 5 (red real y ajuste jugando).
@@ -46,6 +46,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 19 | 18-11 | Más cactus en el desierto | Más grupos de obstáculos y mayor presencia de cactus |
 | 20 | 23-11 | Integrar mapas temáticos con la rama de esprint | Rama visual puesta al día con `game-esprint`; conflictos resueltos conservando ambos cambios |
 | 21 | 23-11 | Estanques con teletransporte y skins personalizables | El máster cambia el mapa en la sala; cada jugador elige forma y color |
+| 22 | 23-11 | Interfaz cian angular para la sala | Paneles grafito, líneas técnicas cian y entradas oscuras |
 
 ## 1. Herramientas de IA
 
@@ -84,6 +85,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «¿Podrías añadir algún elemento así bonito que pueda ayudar a destacar?» | Laguna, oasis y fuente central |
 | «Cambia el de desierto, hay mucho espacio sin bloques (cactus)» | Más grupos de obstáculos y cactus en el desierto |
 | «Haz que al entrar en el estanque aparezcas en otra parte, pon más estanques de distintas formas y tamaños, deja elegir el mapa en la sala y personalizar forma y color del jugador» | Cinco estanques interactivos por mapa, cambio de mapa en la sala de espera y ocho formas con color a elección |
+| «Cambia los colores de las entradas y haz el fondo como las referencias»; luego «no me gusta rosa ni las formas ovaladas, probemos la segunda foto» | Interfaz de paneles grafito con bordes geométricos, líneas cian y controles oscuros |
 
 ## 4. Qué tuvo que investigar el alumno
 
@@ -102,6 +104,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Cómo el servidor transmite el tema elegido y cómo Canvas dibuja siluetas pixeladas, texturas y puntos de interés.
 - Cómo reservar zonas decorativas en un mapa aleatorio y ajustar la densidad de obstáculos sin cerrar rutas.
 - Cómo el servidor detecta la entrada en una zona interactiva y transmite cambios de apariencia a todos los clientes.
+- Cómo crear fondos técnicos con gradientes lineales CSS y mantener el contraste de los campos de formulario.
 
 ## 5. Qué no funcionó a la primera
 
@@ -938,3 +941,28 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Las formas conservan un borde oscuro y otro claro para que se distingan con colores personalizados de brillo distinto.
 
 **Siguiente paso:** dejar la revisión visual en una pestaña pendiente y preguntar si se sube la rama `game-estanques-personalizacion` a GitHub.
+
+---
+
+## Sesión 22 — 2026-11-23 — Interfaz cian angular para la sala
+
+**Autor:** Adriana.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+
+**Qué se pidió:** cambiar los colores de las entradas y la pantalla de espera siguiendo las referencias. Tras probar el fondo rosa de la primera imagen, Adriana indicó que no pegaba y pidió probar el estilo de la segunda imagen.
+
+**Qué se hizo:**
+
+- Rama `view-sala-neon`, basada en `game-estanques-personalizacion`, que aporta la sala de espera y las skins personalizables.
+- Se retiró el fondo rosa con formas ovaladas, que no encajaba con la referencia que prefería Adriana.
+- Fondo grafito con cuadrícula tenue y trazos geométricos cian hechos con gradientes lineales CSS; paneles angulosos, bordes metálicos y botones cian.
+- Campos de texto y selectores oscuros con borde cian y foco a juego; las tarjetas de mapas conservan sus ilustraciones temáticas.
+- `npm test` pasó después de los cambios y `git diff --check` no encontró errores.
+- Se abrió la página de inicio y se creó una sala local para revisar la sala de espera: el fondo, paneles y controles se muestran con el nuevo estilo. En una captura estrecha el selector de mapas sobresalía, así que se añadieron reglas adaptables para que sus tres opciones puedan encogerse y envolver el texto.
+
+**Decisiones y por qué:**
+
+- Se sigue la segunda referencia: estructura rectangular, esquinas recortadas, metal oscuro y acentos cian; sin formas ovaladas ni rosa.
+- Los cambios se limitan a las pantallas fuera de la partida; el canvas y sus colores no cambian.
+
+**Siguiente paso:** preguntar si se sube `view-sala-neon` a GitHub.

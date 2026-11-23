@@ -22,6 +22,39 @@ body {
   font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Inicio y sala de espera: paneles tecnológicos oscuros con trazos cian. */
+body:not(.playing) {
+  --bg: #11191d;
+  --card: rgba(17, 25, 29, 0.97);
+  --line: #24717a;
+  --text: #e7f2f3;
+  --muted: #aebfc2;
+  --gold: #48e3e2;
+  --dark: #0b1418;
+  --error: #ffb4a8;
+  --focus: #67f4ef;
+  --danger: #ff6577;
+  position: relative;
+  isolation: isolate;
+  background: #0d1519;
+}
+
+body:not(.playing)::before {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background:
+    linear-gradient(153deg, transparent 0 18%, rgba(72, 227, 226, 0.20) 18.08% 18.2%, transparent 18.3% 100%),
+    linear-gradient(27deg, transparent 0 68%, rgba(72, 227, 226, 0.13) 68.08% 68.18%, transparent 68.3% 100%),
+    linear-gradient(90deg, transparent 7%, rgba(72, 227, 226, 0.12) 7.08% 7.16%, transparent 7.25% 92%, rgba(72, 227, 226, 0.10) 92.08% 92.16%, transparent 92.25%),
+    repeating-linear-gradient(0deg, transparent 0 47px, rgba(117, 156, 160, 0.035) 48px, transparent 49px),
+    repeating-linear-gradient(90deg, transparent 0 47px, rgba(117, 156, 160, 0.035) 48px, transparent 49px),
+    linear-gradient(145deg, #101a1e, #080f13 72%, #111a1e);
+  background-size: 100% 100%;
+}
+
 main {
   min-height: 100%;
   display: flex;
@@ -39,7 +72,16 @@ main {
   padding: 28px;
 }
 
+body:not(.playing) .card {
+  background: var(--card);
+  border: 1px solid #33727a;
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5), inset 0 1px rgba(192, 219, 221, 0.09), 0 0 16px rgba(38, 206, 204, 0.07);
+}
+
 h1 { margin: 0 0 4px; font-size: 2.2rem; line-height: 1.15; color: var(--gold); }
+body:not(.playing) h1 { text-shadow: 0 0 14px rgba(72, 227, 226, 0.16); }
 h1:focus { outline: none; }
 h2 { margin: 28px 0 8px; font-size: 1.1rem; }
 p { margin: 0 0 12px; }
@@ -56,6 +98,19 @@ input {
   background: var(--bg);
   border: 2px solid var(--line);
   border-radius: 10px;
+}
+body:not(.playing) input:not([type="radio"]):not([type="color"]),
+body:not(.playing) select {
+  background: #0c1519;
+  border-color: #35656b;
+  border-radius: 4px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5), 0 1px rgba(177, 215, 217, 0.06);
+}
+body:not(.playing) input:not([type="radio"]):not([type="color"]):focus,
+body:not(.playing) select:focus {
+  border-color: #54e9e5;
+  outline: 2px solid rgba(84, 233, 229, 0.24);
+  outline-offset: 1px;
 }
 #code { text-transform: uppercase; letter-spacing: 0.3em; font-weight: 700; }
 
@@ -74,12 +129,18 @@ button {
 button:hover { background: #38446f; }
 button.primary { color: var(--dark); background: var(--gold); border-color: var(--gold); }
 button.primary:hover { background: #ffe066; }
+body:not(.playing) button { color: var(--text); background: #1b292e; border-color: #35676e; border-radius: 4px; }
+body:not(.playing) button:hover { background: #263a40; border-color: #55caca; }
+body:not(.playing) button.primary { color: #071719; background: #4cdbd9; border-color: #70f2ed; box-shadow: inset 0 1px rgba(255, 255, 255, 0.34), 0 0 12px rgba(60, 210, 208, 0.16); }
+body:not(.playing) button.primary:hover { background: #73efeb; border-color: #a1fffb; }
 button:disabled { color: var(--muted); background: #262b3d; border-color: #262b3d; cursor: not-allowed; }
 #btn-create { width: 100%; margin-top: 16px; }
 
-.map-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0 4px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; }
+.map-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0 4px; padding: 10px; border: 1px solid var(--line); border-radius: 4px; }
+body:not(.playing) .map-picker,
+body:not(.playing) .skin-picker { border-color: #326b72; border-radius: 3px; }
 .map-picker legend { padding: 0 6px; font-weight: 700; }
-.map-option { display: flex; min-height: 72px; align-items: end; padding: 8px; margin: 0; border: 2px solid var(--line); border-radius: 8px; cursor: pointer; font-size: 0.85rem; line-height: 1.2; }
+.map-option { display: flex; min-height: 72px; align-items: end; padding: 8px; margin: 0; border: 2px solid var(--line); border-radius: 3px; cursor: pointer; font-size: 0.85rem; line-height: 1.2; }
 .map-option input { width: auto; min-height: auto; margin: 0 6px 2px 0; accent-color: var(--gold); }
 .map-option:has(input:checked) { outline: 3px solid var(--focus); outline-offset: 1px; }
 .map-option:has(input:disabled) { cursor: default; opacity: 0.8; }
@@ -112,6 +173,7 @@ a { color: var(--focus); }
 .skin-picker label { align-self: center; margin: 4px 0; }
 .skin-picker select { min-height: 42px; padding: 6px 10px; font: inherit; color: var(--text); background: var(--bg); border: 2px solid var(--line); border-radius: 8px; }
 #lobby-color { width: 76px; height: 44px; min-height: 44px; padding: 3px; justify-self: end; cursor: pointer; }
+body:not(.playing) #lobby-color { border-radius: 3px; border-color: #43868a; }
 .code-line strong { font-size: 1.6rem; letter-spacing: 0.25em; color: var(--gold); margin-left: 6px; }
 
 /* Listas de jugadores: sala de espera, marcador y clasificación */
@@ -126,6 +188,7 @@ a { color: var(--focus); }
   border: 1px solid transparent;
   border-radius: 10px;
 }
+body:not(.playing) .players li { border: 1px solid rgba(72, 227, 226, 0.2); border-radius: 3px; }
 .players li.me { border-color: var(--text); }
 .symbol { font-size: 1.3rem; width: 1.3em; text-align: center; line-height: 1; text-shadow: 0 1px 2px #000, 0 0 2px #fff; }
 .name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
@@ -230,6 +293,18 @@ body.playing main { padding: 0; display: block; height: 100%; }
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+@media (max-width: 480px) {
+  main { align-items: flex-start; padding: 14px 10px; }
+  .card { min-width: 0; padding: 22px 16px; }
+  .map-picker { min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding: 8px 6px; }
+  .map-option { min-width: 0; align-items: center; padding: 7px 4px; font-size: 0.74rem; }
+  .map-option input { flex: none; margin-right: 4px; }
+  .map-option span { min-width: 0; overflow-wrap: anywhere; }
+  .skin-picker { min-width: 0; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 8px; }
+  .row { gap: 6px; }
+  .row button { padding-right: 10px; padding-left: 10px; }
 }
 
 [hidden] { display: none !important; }
