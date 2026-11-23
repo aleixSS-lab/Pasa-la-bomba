@@ -933,6 +933,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Qué falló y cómo se arregló:**
 
 - El navegador integrado no pudo acceder al servidor local. Aleix hizo la comprobación visual en su navegador y confirmó que el selector y los mapas funcionan durante la partida.
+- Dos ejecuciones de `npm test` se quedaron esperando en la parte de red dentro del entorno restringido. Al permitir las conexiones locales del test, `npm test` terminó con «Todo correcto».
 
 **Pendiente de investigar por el alumno:** qué hace que el selector no vuelva a aparecer al regresar a la sala de espera.
 
