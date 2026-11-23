@@ -8,12 +8,13 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 20, 23-11-2026.*
+*Última actualización: sesión 21, 23-11-2026.*
 
 ## Estado actual
 
 - **Publicado:** https://pasa-la-bomba-0db0.onrender.com (Render, gratis). Se actualiza solo con cada fusión en `main`.
-- **Funciona:** salas con código, tres mapas pixelados elegibles por quien crea la sala, obstáculos y puntos de interés temáticos, más cactus en el desierto, bomba, gadgets, esprint con recarga y el resto de la partida; `npm test` superada en la rama `view-mapas-tematicos`, todavía sin fusionar en `main`.
+- **Funciona:** salas con código, tres mapas pixelados elegibles por quien crea la sala, obstáculos y puntos de interés temáticos, más cactus en el desierto, bomba, gadgets, esprint con recarga y el resto de la partida. Las ramas se integraron en `main` por avance directo y las referencias remotas quedaron en el mismo commit.
+- **Pendiente para Adriana:** al terminar una partida y volver a la sala de espera, no aparece el selector de mapas.
 - **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
 - **Sin probar:** una partida real entre personas en PC distintos (ya basta con la web de Render). `start.bat` y el túnel quedan como plan B.
 - **Fase:** 4 de 5 (red real y ajuste jugando).
@@ -45,6 +46,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 18 | 18-11 | Laguna, oasis y fuente central | Un punto de interés decorativo en cada tema |
 | 19 | 18-11 | Más cactus en el desierto | Más grupos de obstáculos y mayor presencia de cactus |
 | 20 | 23-11 | Integrar mapas temáticos con la rama de esprint | Rama visual puesta al día con `game-esprint`; conflictos resueltos conservando ambos cambios |
+| 21 | 23-11 | Integración de ramas y comprobación de mapas | `main` y las ramas quedaron en el mismo commit; bug del selector al volver a la sala anotado para Adriana |
 
 ## 1. Herramientas de IA
 
@@ -904,3 +906,34 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Al reaplicar los mapas surgieron conflictos en `DIARIO.md` y en la exportación final de `server/game.js`. Se combinaron las sesiones de ambos autores y se exportan conjuntamente `sprintWait` y `MAP_THEMES`.
 
 **Siguiente paso:** revisar el pull request #13 y fusionarlo según `FUSION.md` cuando corresponda.
+
+---
+
+## Sesión 21 — 2026-11-23 — Integración de ramas y comprobación de mapas
+
+**Autor:** Aleix.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+
+**Qué se pidió:** «Haz que todas las ramas se suban a main y que todas estén como en ahead y behind 0»; después, «hay 3 ramas que están con commits en ahead, arréglalos».
+
+**Qué se hizo:**
+
+- Se integró `game-esprint` en `main` por avance directo; entraron `docs-equipo-adriana`, `net-ramas-al-dia` y el esprint.
+- Al actualizar GitHub apareció `view-mapas-tematicos`, rama posterior que ya incluía esa cadena y añadía mapas temáticos. Aleix confirmó en el navegador con dos pestañas que se puede elegir el mapa y que aparece en partida.
+- Se integró `view-mapas-tematicos` por avance directo. Se avanzaron las demás ramas locales y remotas hasta el mismo commit de `main`; los commits anteriores siguen en el historial.
+- `npm test` pasó en `game-esprint` y `view-mapas-tematicos`. Render respondió con la versión del esprint y se pudo crear y cerrar una sala de comprobación por Socket.IO.
+- Se anotó para Adriana un fallo observado por Aleix: al terminar una partida y volver a la sala de espera, no aparece el selector de mapas.
+
+**Decisiones y por qué:**
+
+- Se eligió la rama más avanzada (`view-mapas-tematicos`) porque contiene la cadena anterior y sus cambios de mapas. Así se integró todo con un solo avance directo.
+- Se avanzaron las referencias de las ramas a petición de Aleix para que sus indicadores de ahead y behind quedaran a cero; las ramas ya no conservan una punta separada, aunque sus commits siguen dentro del historial.
+- El selector que falta al volver a la sala se dejó como tarea visual independiente para Adriana, sin tocar el código en esta integración.
+
+**Qué falló y cómo se arregló:**
+
+- El navegador integrado no pudo acceder al servidor local. Aleix hizo la comprobación visual en su navegador y confirmó que el selector y los mapas funcionan durante la partida.
+
+**Pendiente de investigar por el alumno:** qué hace que el selector no vuelva a aparecer al regresar a la sala de espera.
+
+**Siguiente paso:** Adriana arregla el selector en una rama `view-` propia; después se prueba y se integra según `FUSION.md`.
