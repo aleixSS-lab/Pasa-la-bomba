@@ -12,6 +12,7 @@ const SPEED = 220;        // píxeles por segundo
 const TICK_MS = 50;       // el servidor avanza 20 veces por segundo
 const GADGET_TYPES = ['trap', 'gum', 'boost'];
 const MAP_THEMES = ['forest', 'desert', 'ruins'];
+const GAME_MODES = ['bomb', 'coinRush'];
 const LANDMARK_CLEARANCE = 4;
 const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'hexagon', 'cross', 'pentagon'];
 const SKIN_COLORS = ['#ff6b6b', '#4dabf7', '#69db7c', '#f783ac', '#da77f2', '#ff922b', '#38d9a9', '#f1f3f5'];
@@ -146,8 +147,9 @@ function respawnGadget(game, type) {
 }
 
 // Crea una partida nueva para la lista de jugadores [{id, name, index}].
-function createGame(playerList, theme = 'forest') {
+function createGame(playerList, theme = 'forest', mode = 'bomb') {
   if (!MAP_THEMES.includes(theme)) theme = 'forest';
+  if (!GAME_MODES.includes(mode)) mode = 'bomb';
   const { walls, reachable, landmark, ponds } = generateMap(theme);
 
   // Barajar las casillas alcanzables: las primeras son gadgets, el resto posibles apariciones.
@@ -157,13 +159,14 @@ function createGame(playerList, theme = 'forest') {
   }
 
   const game = {
-    walls, reachable, theme, landmark, ponds,
+    walls, reachable, theme, landmark, ponds, mode,
     gadgets: new Map(), nextGadgetId: 0,
+    coins: new Map(), nextCoinId: 0, pendingCoins: [],
     players: new Map(),
     time: 0,
     outCount: 0,
     // Sin portador y con una pausa: al terminar la pausa se reparte la bomba al azar.
-    bomb: { holderId: null, left: 0, pause: CONFIG.START_COUNTDOWN },
+    bomb: { holderId: null, left: 0, pause: CONFIG.START_COUNTDOWN, type: null },
   };
 
   const gadgetCount = GADGET_TYPES.length * CONFIG.GADGETS_PER_TYPE;
@@ -192,8 +195,24 @@ function createGame(playerList, theme = 'forest') {
       alive: true, outOrder: 0, inPond: false, teleportReadyAt: 0, // eliminación y salto de estanque
       frozenUntil: 0, slowUntil: 0, boostUntil: 0, immuneUntil: 0,
       sprintUntil: 0, sprintReadyAt: 0,   // esprint: hasta cuándo dura y desde cuándo se puede repetir
+      coins: 0,
+      wins: Number.isInteger(info.wins) ? info.wins : 0,
+      stats: {
+        survivalTime: 0, boosts: 0, teleports: 0, traps: 0, bombsPassed: 0,
+        bombsReceived: 0, distance: 0, coins: 0, eliminations: 0,
+      },
       input: { up: false, down: false, left: false, right: false, sprint: false },
     });
+  }
+
+  if (mode === 'coinRush') {
+    const coinCells = [...spawnCells];
+    for (let i = 0; i < CONFIG.COINS_ON_MAP && coinCells.length; i++) {
+      const cellIndex = rand(coinCells.length);
+      const pos = center(coinCells.splice(cellIndex, 1)[0]);
+      const coin = { id: game.nextCoinId++, x: pos.x, y: pos.y };
+      game.coins.set(coin.id, coin);
+    }
   }
 
   return game;
@@ -231,6 +250,8 @@ function movePlayer(game, p, dt) {
   if (game.time < p.boostUntil) speed *= CONFIG.BOOST_FACTOR;
   if (game.time < p.sprintUntil) speed *= CONFIG.SPRINT_FACTOR;
 
+  const startX = p.x;
+  const startY = p.y;
   // Movimiento en pasos pequeños y por ejes, para deslizarse a lo largo de los muros.
   const dist = speed * dt;
   const steps = Math.ceil(dist / 2);
@@ -241,6 +262,7 @@ function movePlayer(game, p, dt) {
     if (!hitsWall(game.walls, p.x + sx, p.y)) p.x += sx;
     if (!hitsWall(game.walls, p.x, p.y + sy)) p.y += sy;
   }
+  p.stats.distance += Math.hypot(p.x - startX, p.y - startY);
 }
 
 function pondAt(game, x, y) {
@@ -286,6 +308,7 @@ function usePonds(game, p, events) {
   p.y = to.y;
   p.inPond = false;
   p.teleportReadyAt = game.time + CONFIG.POND_TELEPORT_COOLDOWN;
+  p.stats.teleports++;
   events.push({ type: 'teleport', by: p.id, from, to: { x: p.x, y: p.y } });
 }
 
@@ -296,8 +319,95 @@ function useGadgets(game, p, events) {
     if (g.type === 'trap') p.frozenUntil = game.time + CONFIG.TRAP_SECONDS;
     if (g.type === 'gum') p.slowUntil = game.time + CONFIG.GUM_SECONDS;
     if (g.type === 'boost') p.boostUntil = game.time + CONFIG.BOOST_SECONDS;
+    if (g.type === 'boost') p.stats.boosts++;
+    if (g.type === 'trap') p.stats.traps++;
     events.push({ type: 'gadget', kind: g.type, by: p.id, removed: g.id, added: respawnGadget(game, g.type) });
   }
+}
+
+function randomBombType() {
+  return CONFIG.BOMB_TYPES[rand(CONFIG.BOMB_TYPES.length)];
+}
+
+function explodeBomb(game, holder, events) {
+  const bombType = game.bomb.type;
+  const effectType = bombType === 'mystery'
+    ? ['standard', 'frozen', 'explosive'][rand(3)]
+    : bombType;
+  const radius = effectType === 'explosive' ? CONFIG.EXPLOSIVE_RADIUS
+    : (effectType === 'frozen' ? CONFIG.FROZEN_RADIUS : 0);
+  const affected = [];
+  const slowed = [];
+
+  for (const p of alivePlayers(game)) {
+    const distance = Math.hypot(p.x - holder.x, p.y - holder.y);
+    if (effectType === 'explosive' && distance <= radius) {
+      p.alive = false;
+      p.outOrder = ++game.outCount;
+      affected.push(p.id);
+      if (p.id !== holder.id) holder.stats.eliminations++;
+    } else if (p.id === holder.id) {
+      p.alive = false;
+      p.outOrder = ++game.outCount;
+      affected.push(p.id);
+    } else if (effectType === 'frozen' && distance <= radius) {
+      p.slowUntil = Math.max(p.slowUntil, game.time + CONFIG.FROZEN_SECONDS);
+      slowed.push(p.id);
+    }
+  }
+
+  game.bomb.holderId = null;
+  game.bomb.left = 0;
+  game.bomb.type = null;
+  game.bomb.pause = CONFIG.EXPLOSION_PAUSE;
+  events.push({
+    type: 'explosion', id: holder.id, x: Math.round(holder.x), y: Math.round(holder.y),
+    bombType, effectType, radius, affected, slowed,
+  });
+}
+
+function updateCoins(game, events) {
+  const pending = [];
+  for (const item of game.pendingCoins) {
+    if (item.at > game.time) {
+      pending.push(item);
+      continue;
+    }
+    const occupied = new Set([...game.coins.values()].map((coin) => `${coin.x},${coin.y}`));
+    const available = game.reachable.filter(([x, y]) => {
+      const pos = center([x, y]);
+      return !occupied.has(`${pos.x},${pos.y}`)
+        && ![...game.gadgets.values()].some((g) => g.x === pos.x && g.y === pos.y);
+    });
+    if (!available.length) {
+      pending.push({ ...item, at: game.time + 1 });
+      continue;
+    }
+    const coin = { id: game.nextCoinId++, ...center(available[rand(available.length)]) };
+    game.coins.set(coin.id, coin);
+    events.push({ type: 'coin_spawn', coin });
+  }
+  game.pendingCoins = pending;
+
+  for (const p of alivePlayers(game)) {
+    for (const coin of game.coins.values()) {
+      if (Math.hypot(coin.x - p.x, coin.y - p.y) > RADIUS + 10) continue;
+      game.coins.delete(coin.id);
+      p.coins++;
+      p.stats.coins++;
+      game.pendingCoins.push({ id: coin.id, at: game.time + CONFIG.COIN_RESPAWN_SECONDS });
+      events.push({ type: 'coin', by: p.id, id: coin.id, x: coin.x, y: coin.y });
+      break;
+    }
+  }
+}
+
+function findCoinWinners(game) {
+  if (game.time < CONFIG.COIN_RUSH_SECONDS) return [];
+  const players = [...game.players.values()];
+  if (!players.length) return [];
+  const highest = Math.max(...players.map((p) => p.coins));
+  return players.filter((p) => p.coins === highest).map((p) => p.id);
 }
 
 function updateBomb(game, dt, events) {
@@ -310,7 +420,9 @@ function updateBomb(game, dt, events) {
     if (bomb.pause <= 0 && alive.length > 1) {
       bomb.holderId = alive[rand(alive.length)].id;
       bomb.left = CONFIG.BOMB_SECONDS;
-      events.push({ type: 'bomb', holder: bomb.holderId });
+      bomb.type = randomBombType();
+      game.players.get(bomb.holderId).stats.bombsReceived++;
+      events.push({ type: 'bomb', holder: bomb.holderId, bombType: bomb.type });
     }
     return;
   }
@@ -318,17 +430,14 @@ function updateBomb(game, dt, events) {
   const holder = game.players.get(bomb.holderId);
   if (!holder || !holder.alive) {  // el portador se ha desconectado
     bomb.holderId = null;
+    bomb.type = null;
     bomb.pause = 1;
     return;
   }
 
   bomb.left -= dt;
   if (bomb.left <= 0) {
-    holder.alive = false;
-    holder.outOrder = ++game.outCount;
-    bomb.holderId = null;
-    bomb.pause = CONFIG.EXPLOSION_PAUSE;
-    events.push({ type: 'explosion', id: holder.id, x: Math.round(holder.x), y: Math.round(holder.y) });
+    explodeBomb(game, holder, events);
     return;
   }
 
@@ -340,7 +449,9 @@ function updateBomb(game, dt, events) {
     holder.immuneUntil = game.time + CONFIG.PASS_IMMUNITY;
     target.frozenUntil = Math.max(target.frozenUntil, game.time + CONFIG.RECEIVE_STUN);
     bomb.holderId = target.id;
-    events.push({ type: 'pass', from: holder.id, to: target.id });
+    holder.stats.bombsPassed++;
+    target.stats.bombsReceived++;
+    events.push({ type: 'pass', from: holder.id, to: target.id, bombType: bomb.type });
   }
 }
 
@@ -349,13 +460,18 @@ function step(game, dt) {
   game.time += dt;
   const events = [];
   for (const p of alivePlayers(game)) {
+    p.stats.survivalTime += dt;
     trySprint(game, p, events);
     movePlayer(game, p, dt);
     usePonds(game, p, events);
     useGadgets(game, p, events);
   }
-  updateBomb(game, dt, events);
-  return { events, winnerId: findWinner(game) };
+  if (game.mode === 'coinRush') updateCoins(game, events);
+  else updateBomb(game, dt, events);
+  const winnerIds = game.mode === 'coinRush'
+    ? findCoinWinners(game)
+    : (findWinner(game) === null ? [] : [findWinner(game)]);
+  return { events, winnerId: winnerIds[0] || null, winnerIds };
 }
 
 // Gana el último jugador vivo. (Si los vivos se desconectan todos, el último eliminado.)
@@ -380,5 +496,5 @@ function sprintWait(game, p) {
 
 module.exports = {
   createGame, step, effectsOf, sprintWait, TILE, COLS, ROWS, RADIUS, GADGET_RADIUS, SPEED, TICK_MS,
-  MAP_THEMES, SHAPES, SKIN_COLORS,
+  MAP_THEMES, GAME_MODES, SHAPES, SKIN_COLORS,
 };

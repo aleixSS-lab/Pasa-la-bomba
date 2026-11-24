@@ -3,6 +3,13 @@
 
 module.exports = {
   BOMB_SECONDS: 30,       // segundos que tarda la bomba en explotar
+  BOMB_TYPES: ['standard', 'frozen', 'explosive', 'mystery'],
+  FROZEN_RADIUS: 210,     // radio de jugadores ralentizados por la bomba congelada
+  FROZEN_SECONDS: 3,      // duración de la ralentización de la bomba congelada
+  EXPLOSIVE_RADIUS: 150,  // radio de eliminación de la bomba explosiva
+  COIN_RUSH_SECONDS: 90,  // duración del modo Coin Rush
+  COINS_ON_MAP: 44,       // monedas visibles al mismo tiempo
+  COIN_RESPAWN_SECONDS: 2.5, // segundos para que reaparezca una moneda recogida
   START_COUNTDOWN: 3,     // segundos de espera al empezar, antes de repartir la primera bomba
   EXPLOSION_PAUSE: 3,     // segundos entre una explosión y la bomba siguiente
   BOMB_SPEED: 1.15,       // quien lleva la bomba corre un poco más (x1,15) para poder alcanzar a los demás

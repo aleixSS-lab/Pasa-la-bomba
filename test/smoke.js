@@ -135,9 +135,9 @@ function testRules() {
   // Pasar la bomba al tocar, con inmunidad para quien la acaba de pasar.
   g = arena(['A', 'B']);
   Object.assign(g.players.get('B'), { x: 120, y: 100 });
-  g.bomb = { holderId: 'A', left: 99, pause: 0 };
+  g.bomb = { holderId: 'A', left: 99, pause: 0, type: 'standard' };
   let r = run(g, 0.05);
-  assert.deepStrictEqual(r.events, [{ type: 'pass', from: 'A', to: 'B' }]);
+  assert.deepStrictEqual(r.events, [{ type: 'pass', from: 'A', to: 'B', bombType: 'standard' }]);
   r = run(g, CONFIG.PASS_IMMUNITY - 0.15);
   assert.strictEqual(g.bomb.holderId, 'B', 'A es inmune y no debe recibirla de vuelta todavía');
   run(g, 0.3);
@@ -149,7 +149,7 @@ function testRules() {
   const b = g.players.get('B');
   Object.assign(b, { x: 120, y: 100 });
   b.input.down = true;
-  g.bomb = { holderId: 'A', left: 99, pause: 0 };
+  g.bomb = { holderId: 'A', left: 99, pause: 0, type: 'standard' };
   run(g, 0.05);
   const stunnedAt = b.y;
   run(g, CONFIG.RECEIVE_STUN - 0.1);
@@ -158,7 +158,7 @@ function testRules() {
 
   // Explosión, bomba nueva al azar y ganador.
   g = arena(['A', 'B', 'C']);
-  g.bomb = { holderId: 'A', left: 0.2, pause: 0 };
+  g.bomb = { holderId: 'A', left: 0.2, pause: 0, type: 'standard' };
   r = run(g, 0.3);
   assert.strictEqual(r.events[0].type, 'explosion');
   assert.strictEqual(r.events[0].id, 'A');
@@ -172,6 +172,48 @@ function testRules() {
   r = run(g, 0.2);
   assert.strictEqual(r.winnerId, next.holder === 'B' ? 'C' : 'B');
   ok(`explosión: eliminado, bomba nueva al azar a los ${CONFIG.EXPLOSION_PAUSE} s y gana el último vivo`);
+
+  // La bomba congelada ralentiza a jugadores cercanos, pero solo elimina a quien la lleva.
+  g = arena(['A', 'B']);
+  Object.assign(g.players.get('B'), { x: 140, y: 100 });
+  g.bomb = { holderId: 'A', left: 0.05, pause: 0, type: 'frozen' };
+  r = run(g, 0.1);
+  assert.strictEqual(g.players.get('A').alive, false);
+  assert.strictEqual(g.players.get('B').alive, true);
+  assert.ok(g.players.get('B').slowUntil > g.time - 0.1);
+  assert.strictEqual(r.events.find((event) => event.type === 'explosion').effectType, 'frozen');
+
+  // La bomba explosiva también elimina a los jugadores que están dentro de su radio.
+  g = arena(['A', 'B', 'C']);
+  Object.assign(g.players.get('B'), { x: 140, y: 100 });
+  Object.assign(g.players.get('C'), { x: 400, y: 100 });
+  g.bomb = { holderId: 'A', left: 0.05, pause: 0, type: 'explosive' };
+  r = run(g, 0.1);
+  assert.strictEqual(g.players.get('A').alive, false);
+  assert.strictEqual(g.players.get('B').alive, false);
+  assert.strictEqual(g.players.get('C').alive, true);
+  assert.strictEqual(g.players.get('A').stats.eliminations, 1);
+  assert.strictEqual(r.events.find((event) => event.type === 'explosion').effectType, 'explosive');
+  ok('bombas congelada y explosiva aplican sus efectos de área');
+
+  // Coin Rush genera monedas, suma una recogida y termina con quien más tiene.
+  const duration = CONFIG.COIN_RUSH_SECONDS;
+  CONFIG.COIN_RUSH_SECONDS = 0.1;
+  g = game.createGame([{ id: 'A', name: 'A', index: 0 }, { id: 'B', name: 'B', index: 1 }], 'forest', 'coinRush');
+  assert.strictEqual(g.coins.size, CONFIG.COINS_ON_MAP);
+  // Aísla una única moneda para que las apariciones aleatorias no puedan empatar.
+  g.coins.clear();
+  const coin = { id: g.nextCoinId++, x: 100, y: 100 };
+  g.coins.set(coin.id, coin);
+  Object.assign(g.players.get('A'), { x: coin.x, y: coin.y });
+  r = game.step(g, 0.05);
+  assert.ok(r.events.some((event) => event.type === 'coin' && event.by === 'A'));
+  assert.strictEqual(g.players.get('A').coins, 1);
+  game.step(g, 0.1);
+  r = game.step(g, 0.05);
+  assert.deepStrictEqual(r.winnerIds, ['A']);
+  CONFIG.COIN_RUSH_SECONDS = duration;
+  ok('Coin Rush: monedas iniciales, recogida, puntuación y victoria por tiempo');
 }
 
 // ---------- B) Partida completa por red ----------
@@ -246,7 +288,7 @@ async function testNetwork() {
   ok('la API devuelve el estado de la sala y 404 si no existe');
 
   // --- Partida (con la bomba acelerada) ---
-  Object.assign(CONFIG, { BOMB_SECONDS: 3, EXPLOSION_PAUSE: 1, START_COUNTDOWN: 1 });
+  Object.assign(CONFIG, { BOMB_SECONDS: 3, EXPLOSION_PAUSE: 1, START_COUNTDOWN: 1, BOMB_TYPES: ['standard'] });
   const events = [];
   ana.on('game_event', (e) => events.push(e));
   const starts = Promise.all([ana, luis, marta].map((s) => once(s, 'game_start')));

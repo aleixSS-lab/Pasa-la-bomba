@@ -53,6 +53,7 @@ function publicRoom(room) {
   return {
     code: room.code,
     theme: room.theme,
+    mode: room.mode || 'bomb',
     hostId: room.hostId,
     status: room.status,
     players: [...room.players.values()],
@@ -62,18 +63,72 @@ function publicRoom(room) {
 // Lo que devuelve la API REST. Los jugadores van ordenados por puesto: primero los vivos,
 // después los eliminados empezando por el que más aguantó.
 function summary(room) {
+  const mode = room.mode || 'bomb';
   const list = [...room.players.values()].map((p) => {
     const inGame = room.game && room.game.players.get(p.id);
-    return { name: p.name, alive: inGame ? inGame.alive : true, out: inGame ? inGame.outOrder : 0 };
+    const raw = inGame ? inGame.stats : {};
+    return {
+      id: p.id,
+      name: p.name,
+      alive: inGame ? inGame.alive : true,
+      out: inGame ? inGame.outOrder : 0,
+      coins: inGame ? inGame.coins : 0,
+      stats: {
+        survivalTime: Math.round((raw.survivalTime || 0) * 10) / 10,
+        boosts: raw.boosts || 0,
+        teleports: raw.teleports || 0,
+        traps: raw.traps || 0,
+        bombsPassed: raw.bombsPassed || 0,
+        bombsReceived: raw.bombsReceived || 0,
+        eliminations: raw.eliminations || 0,
+        distance: Math.round((raw.distance || 0) / game.TILE),
+        coins: inGame ? inGame.coins : 0,
+        wins: p.wins || 0,
+      },
+    };
   });
-  list.sort((a, b) => (b.alive - a.alive) || (b.out - a.out));
+  list.sort((a, b) => mode === 'coinRush'
+    ? (b.coins - a.coins) || (b.stats.distance - a.stats.distance)
+    : (Number(b.alive) - Number(a.alive)) || (b.out - a.out));
+  let previousScore = null;
+  let place = 0;
+  const ranked = list.map((p, index) => {
+    const score = mode === 'coinRush' ? p.coins : (p.alive ? Infinity : p.out);
+    if (index === 0 || score !== previousScore) place = index + 1;
+    previousScore = score;
+    return { name: p.name, place, eliminated: !p.alive, coins: p.coins, stats: p.stats };
+  });
+  const awards = [];
+  const awardMost = (key, getter) => {
+    const eligible = list.filter((p) => getter(p) > 0);
+    if (!eligible.length) return;
+    const max = Math.max(...eligible.map(getter));
+    eligible.filter((p) => getter(p) === max).forEach((p) => awards.push({ key, player: p.name }));
+  };
+  awardMost('fastest', (p) => p.stats.survivalTime > 0 ? p.stats.distance / p.stats.survivalTime : 0);
+  awardMost('boostCollector', (p) => p.stats.boosts);
+  awardMost('longestSurvival', (p) => p.stats.survivalTime);
+  awardMost('teleporter', (p) => p.stats.teleports);
+  awardMost('trapper', (p) => p.stats.traps);
+  if (mode === 'bomb') {
+    awardMost('bombMagnet', (p) => p.stats.bombsReceived);
+    const unlucky = list.filter((p) => !p.alive && p.out > 0).sort((a, b) => a.out - b.out)[0];
+    if (unlucky) awards.push({ key: 'unlucky', player: unlucky.name });
+  }
   return {
     id: room.code,
     status: room.status,  // lobby | playing | finished
+    mode,
+    theme: room.theme,
     bombSeconds: CONFIG.BOMB_SECONDS,
-    players: list.map((p, i) => ({ name: p.name, place: room.game ? i + 1 : null, eliminated: !p.alive })),
+    modeSeconds: CONFIG.COIN_RUSH_SECONDS,
+    players: room.game ? ranked.map((p) => ({ name: p.name, place: p.place, eliminated: p.eliminated }))
+      : list.map((p) => ({ name: p.name, place: null, eliminated: false })),
+    statistics: room.game ? list.map((p) => ({ name: p.name, coins: p.coins, eliminated: !p.alive, place: ranked.find((r) => r.name === p.name).place, ...p.stats })) : [],
     eliminationOrder: list.filter((p) => !p.alive).sort((a, b) => a.out - b.out).map((p) => p.name),
     winner: room.winner,
+    winners: room.winners || [],
+    awards,
   };
 }
 
@@ -85,6 +140,7 @@ function addPlayer(room, socket, name) {
     id: socket.id,
     name,
     index,
+    wins: 0,
     shape: game.SHAPES[index % game.SHAPES.length],
     color: game.SKIN_COLORS[index % game.SKIN_COLORS.length],
   });
@@ -114,9 +170,10 @@ function removePlayer(socket) {
 // ---------- Partida ----------
 
 function startGame(room) {
-  room.game = game.createGame([...room.players.values()], room.theme);
+  room.game = game.createGame([...room.players.values()], room.theme, room.mode);
   room.status = 'playing';
   room.winner = null;
+  room.winners = [];
 
   io.to(room.code).emit('game_start', {
     tile: game.TILE,
@@ -125,6 +182,9 @@ function startGame(room) {
     radius: game.RADIUS,
     gadgetRadius: game.GADGET_RADIUS,
     theme: room.theme,
+    mode: room.mode,
+    modeSeconds: CONFIG.COIN_RUSH_SECONDS,
+    coins: [...room.game.coins.values()],
     landmark: room.game.landmark,
     ponds: room.game.ponds,
     bombSeconds: CONFIG.BOMB_SECONDS,
@@ -142,16 +202,20 @@ function startGame(room) {
 
 function tick(room) {
   const g = room.game;
-  const { events, winnerId } = game.step(g, game.TICK_MS / 1000);
+  const { events, winnerId, winnerIds } = game.step(g, game.TICK_MS / 1000);
   for (const event of events) io.to(room.code).emit('game_event', event);
 
   io.to(room.code).emit('state', {
+    mode: g.mode,
+    timeLeft: g.mode === 'coinRush' ? Math.max(0, Math.ceil(CONFIG.COIN_RUSH_SECONDS - g.time)) : null,
     players: [...g.players.values()].map((p) => ({
       id: p.id, x: Math.round(p.x), y: Math.round(p.y), alive: p.alive, fx: game.effectsOf(g, p),
       sw: game.sprintWait(g, p),   // segundos para poder esprintar otra vez
+      coins: p.coins,
     })),
     bomb: {
       holder: g.bomb.holderId,
+      type: g.bomb.type,
       left: Math.max(0, Math.round(g.bomb.left * 10) / 10),
       pause: Math.max(0, Math.round(g.bomb.pause * 10) / 10),
     },
@@ -160,7 +224,12 @@ function tick(room) {
   if (winnerId !== null) {
     clearInterval(room.timer);
     room.status = 'finished';
-    room.winner = g.players.get(winnerId).name;
+    room.winners = (winnerIds || [winnerId]).map((id) => g.players.get(id)).filter(Boolean).map((p) => p.name);
+    room.winners.forEach((name) => {
+      const player = [...room.players.values()].find((p) => p.name === name);
+      if (player) player.wins++;
+    });
+    room.winner = room.winners.length > 1 ? room.winners.join(', ') : (room.winners[0] || '');
     results.set(room.code, summary(room));
     if (results.size > 100) results.delete(results.keys().next().value);
     io.to(room.code).emit('game_over', { ...summary(room), winnerId });
@@ -179,9 +248,10 @@ io.on('connection', (socket) => {
     if (!name) return reply(ack, { ok: false, error: 'invalid_name' });
     removePlayer(socket);
     const theme = game.MAP_THEMES.includes(data && data.theme) ? data.theme : 'forest';
+    const mode = game.GAME_MODES.includes(data && data.mode) ? data.mode : 'bomb';
     const room = {
-      code: newCode(), theme, hostId: socket.id, status: 'lobby',
-      players: new Map(), game: null, timer: null, winner: null,
+      code: newCode(), theme, mode, hostId: socket.id, status: 'lobby',
+      players: new Map(), game: null, timer: null, winner: null, winners: [],
     };
     rooms.set(room.code, room);
     addPlayer(room, socket, name);
@@ -221,6 +291,17 @@ io.on('connection', (socket) => {
     if (room.status !== 'lobby') return reply(ack, { ok: false, error: 'game_in_progress' });
     if (!game.MAP_THEMES.includes(data && data.theme)) return reply(ack, { ok: false, error: 'invalid_theme' });
     room.theme = data.theme;
+    io.to(room.code).emit('room_update', publicRoom(room));
+    reply(ack, { ok: true });
+  });
+
+  socket.on('set_game_mode', (data, ack) => {
+    const room = myRoom();
+    if (!room) return reply(ack, { ok: false, error: 'room_not_found' });
+    if (room.hostId !== socket.id) return reply(ack, { ok: false, error: 'not_host' });
+    if (room.status !== 'lobby') return reply(ack, { ok: false, error: 'game_in_progress' });
+    if (!game.GAME_MODES.includes(data && data.mode)) return reply(ack, { ok: false, error: 'invalid_mode' });
+    room.mode = data.mode;
     io.to(room.code).emit('room_update', publicRoom(room));
     reply(ack, { ok: true });
   });

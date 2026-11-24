@@ -100,6 +100,10 @@ const isHost = () => room && room.hostId === socket.id;
 function renderLobby() {
   $('lobby-code').textContent = room.code;
   $('lobby-theme').textContent = t(`map_${room.theme || 'forest'}`);
+  document.querySelectorAll('#lobby-mode-picker input').forEach((input) => {
+    input.checked = input.value === (room.mode || 'bomb');
+    input.disabled = !isHost();
+  });
   document.querySelectorAll('#lobby-map-picker input').forEach((input) => {
     input.checked = input.value === room.theme;
     input.disabled = !isHost();
@@ -126,17 +130,20 @@ function renderLobby() {
 
 // Marcador de la partida: quién tiene la bomba y quién está eliminado.
 function renderHud(state) {
-  const key = `${state.bomb.holder}|${state.players.map((p) => `${p.id}${p.alive ? 1 : 0}`).join()}`;
+  const key = `${state.mode}|${state.bomb.holder}|${state.bomb.type}|${state.players.map((p) => `${p.id}${p.alive ? 1 : 0}${p.coins || 0}`).join()}`;
   if (key === hudKey) return;
   hudKey = key;
   $('hud').replaceChildren(...state.players.map((s) => {
     const hasBomb = s.id === state.bomb.holder;
-    const li = playerItem({ ...playerById(s.id), id: s.id }, hasBomb ? t('tag_bomb') : (s.alive ? '' : t('tag_out')));
+    const extra = state.mode === 'coinRush'
+      ? t('coin_score', { n: s.coins || 0 })
+      : (hasBomb ? t(`bomb_type_${state.bomb.type || 'standard'}`) : (s.alive ? '' : t('tag_out')));
+    const li = playerItem({ ...playerById(s.id), id: s.id }, extra);
     li.classList.toggle('bomb', hasBomb);
     if (hasBomb) {
       const icon = document.createElement('img');
       icon.className = 'hud-icon';
-      icon.src = Game.iconURL('bomb');
+      icon.src = Game.iconURL('bomb', state.bomb.type || 'standard');
       icon.alt = '';
       li.querySelector('.tag').before(icon);
     }
@@ -147,18 +154,29 @@ function renderHud(state) {
 }
 
 // Cartel superior con la cuenta atrás de la bomba.
-function renderBanner(bomb) {
-  const mine = bomb.holder === socket.id;
+function renderBanner(state) {
+  if (state.mode === 'coinRush') {
+    const text = t('coin_timer', { n: state.timeLeft || 0 });
+    $('banner').textContent = text;
+    $('banner').classList.remove('danger');
+    bannerText = text;
+    return;
+  }
+  const mine = state.bomb.holder === socket.id;
   let text;
-  if (!bomb.holder) text = t('bomb_wait', { n: Math.ceil(bomb.pause) });
-  else if (mine) text = t('bomb_you', { n: Math.ceil(bomb.left) });
-  else text = t('bomb_other', { name: playerById(bomb.holder).name, n: Math.ceil(bomb.left) });
+  if (!state.bomb.holder) text = t('bomb_wait', { n: Math.ceil(state.bomb.pause) });
+  else {
+    const type = t(`bomb_type_${state.bomb.type || 'standard'}`);
+    text = mine
+      ? t('bomb_you_type', { type, n: Math.ceil(state.bomb.left) })
+      : t('bomb_other_type', { name: playerById(state.bomb.holder).name, type, n: Math.ceil(state.bomb.left) });
+  }
   if (text === bannerText) return;
   bannerText = text;
   $('banner').textContent = text;
   $('banner').classList.toggle('danger', mine);
 
-  if (mine && !warned && bomb.left <= 5) {
+  if (mine && !warned && state.bomb.left <= 5) {
     warned = true;
     announce(t('announce_5s'));
   }
@@ -207,13 +225,23 @@ function enterRoom(event, payload) {
 
 $('btn-create').addEventListener('click', () => {
   const theme = document.querySelector('input[name="theme"]:checked').value;
-  enterRoom('create_room', { theme });
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  enterRoom('create_room', { theme, mode });
 });
 
 document.querySelectorAll('#lobby-map-picker input').forEach((input) => {
   input.addEventListener('change', () => {
     if (!input.checked) return;
     socket.emit('set_theme', { theme: input.value }, (res) => {
+      showError(res && res.ok ? null : (res && res.error), 'lobby-error');
+    });
+  });
+});
+
+document.querySelectorAll('#lobby-mode-picker input').forEach((input) => {
+  input.addEventListener('change', () => {
+    if (!input.checked) return;
+    socket.emit('set_game_mode', { mode: input.value }, (res) => {
       showError(res && res.ok ? null : (res && res.error), 'lobby-error');
     });
   });
@@ -294,14 +322,14 @@ socket.on('game_start', (data) => {
   $('toast').hidden = true;
   show('game');
   Game.start(data, socket.id, (input) => socket.emit('input', input));
-  renderHud({ players: data.players, bomb: { holder: null } });
+  renderHud({ mode: data.mode, players: data.players, bomb: { holder: null, type: null } });
   announce(t('announce_start'));
 });
 
 socket.on('state', (state) => {
   Game.onState(state);
   renderHud(state);
-  renderBanner(state.bomb);
+  renderBanner(state);
   renderSprint(state);
 });
 
@@ -316,21 +344,50 @@ socket.on('game_event', (event) => {
     else announce(t('announce_bomb_other', { name: playerById(to).name }));
   } else if (event.type === 'explosion') {
     notify(event.id === me ? t('announce_out_you') : t('announce_out_other', { name: playerById(event.id).name }));
+    if (event.effectType === 'frozen') announce(t('announce_freeze_bomb'));
+    if (event.effectType === 'explosive') announce(t('announce_explosive_bomb'));
+    if (event.bombType === 'mystery') announce(t('announce_mystery_bomb'));
   } else if (event.type === 'gadget' && event.by === me) {
     notify(t(`announce_${event.kind}`));
   } else if (event.type === 'teleport' && event.by === me) {
     notify(t('announce_teleport'));
+  } else if (event.type === 'coin' && event.by === me) {
+    notify(t('coin_collected'));
   }
 });
 
 socket.on('game_over', (result) => {
   Game.stop();
-  const title = result.winnerId === socket.id ? t('win_you') : t('win_other', { name: result.winner });
+  const winners = result.winners || [];
+  const title = result.mode === 'coinRush'
+    ? (winners.length > 1 ? t('coin_tie') : t('coin_win', { name: result.winner }))
+    : (winners.length > 1 ? t('bomb_tie') : (result.winnerId === socket.id ? t('win_you') : t('win_other', { name: result.winner })));
   $('results-title').textContent = title;
   const byName = new Map((room ? room.players : []).map((p) => [p.name, p]));
   $('ranking').replaceChildren(...result.players.map((p) => {
     const info = byName.get(p.name) || { index: 0 };
-    return playerItem({ ...info, name: p.name }, t(p.eliminated ? 'tag_out' : 'tag_winner'));
+    return playerItem({ ...info, name: p.name }, t(p.place === 1 ? 'tag_winner' : (p.eliminated ? 'tag_out' : 'tag_winner')));
+  }));
+  $('result-stats').replaceChildren(...result.players.map((p) => {
+    const row = playerItem({ ...(byName.get(p.name) || { index: 0 }), name: p.name }, '');
+    const stats = (result.statistics || []).find((item) => item.name === p.name) || {};
+    const metrics = document.createElement('span');
+    metrics.className = 'result-metrics';
+    const fields = result.mode === 'coinRush'
+      ? [['coins', 'stat_coins'], ['survivalTime', 'stat_survival'], ['boosts', 'stat_boosts'], ['teleports', 'stat_teleports'], ['traps', 'stat_traps'], ['distance', 'stat_distance'], ['wins', 'stat_wins']]
+      : [['survivalTime', 'stat_survival'], ['boosts', 'stat_boosts'], ['teleports', 'stat_teleports'], ['traps', 'stat_traps'], ['eliminations', 'stat_eliminations'], ['bombsPassed', 'stat_bombs_passed'], ['bombsReceived', 'stat_bombs_received'], ['distance', 'stat_distance'], ['wins', 'stat_wins']];
+    metrics.textContent = fields.map(([key, label]) => t(label, { n: stats[key] || 0 })).join(' · ');
+    row.append(metrics);
+    return row;
+  }));
+  $('result-awards').replaceChildren(...(result.awards || []).map((award) => {
+    const item = document.createElement('li');
+    const titleEl = document.createElement('strong');
+    const playerEl = document.createElement('span');
+    titleEl.textContent = t(`award_${award.key}`);
+    playerEl.textContent = award.player;
+    item.append(titleEl, playerEl);
+    return item;
   }));
   $('api-link').href = `api/games/${result.id}`;
   if (room) renderResultsControls();

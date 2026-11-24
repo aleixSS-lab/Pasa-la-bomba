@@ -63,7 +63,7 @@ Reglas del juego:
 - Por el suelo hay gadgets que afectan a quien los pisa: **trampa de oso** (inmóvil 1,5 s), **chicle** (mitad de velocidad 3 s) y **acelerador** (velocidad ×1,5 durante 3 s). Al usarse reaparecen en otro sitio.
 - **Esprint** con la tecla Espacio: velocidad ×1,6 durante 1,5 s y después 6 s de recarga. Se suma a los demás efectos, no funciona dentro de una trampa y mantener la tecla no lo repite. Valores en `config.js` (`SPRINT_*`).
 
-La primera versión del juego era de recoger monedas (Coin Rush); se cambió por decisión del alumno. No queda nada de las monedas en el código.
+La primera versión del juego era de recoger monedas (Coin Rush); se cambió por decisión del alumno. En la sesión 23 se reincorporó como modo alternativo junto a «Pasa la bomba».
 
 Alcance, que manda sobre todo lo demás:
 
@@ -159,6 +159,8 @@ Reglas de diseño:
 - **Sin login.** El jugador escribe un apodo (único dentro de la sala) y crea una sala o se une con un código de 4 letras. Quien crea la sala es el máster y es el único que puede iniciar la partida. Si el máster se va, lo es el siguiente jugador.
 - **Mapa.** Cuadrícula de 40×30 casillas con muros aleatorios. Cada tema genera cinco estanques transitables de varias formas y tamaños; entrar en uno transporta al jugador a una zona lejana y libre. Los estanques y la zona central se reservan durante la generación para que no se tapen con muros, gadgets o apariciones. La recarga del teletransporte está en `config.js`.
 - **Personalización.** Cada jugador puede elegir en la sala de espera una de ocho formas y un color hexadecimal. El servidor valida y comparte esa apariencia con toda la sala. Solo el máster puede cambiar el mapa mientras la sala está esperando.
+- **Modos.** El máster elige `bomb` o `coinRush` al crear la sala y puede cambiarlo en la sala de espera. Coin Rush crea monedas en casillas transitables, las repone tras recogerlas y termina según `COIN_RUSH_SECONDS`; gana quien tenga más. En modo bomba, cada ronda elige `standard`, `frozen`, `explosive` o `mystery`; los radios y duración del efecto congelado están en `config.js`.
+- **Estadísticas de partida.** El estado de cada jugador cuenta supervivencia, aceleradores, teletransportes, trampas, eliminaciones, bombas pasadas y recibidas, distancia, monedas y victorias en esa sala. El resultado REST y `game_over` incluyen `mode`, `modeSeconds`, `statistics`, `winners` y `awards`. Todo se guarda en memoria, sin persistencia entre reinicios.
 - **Endpoints REST** (solo lectura, en `server/index.js`):
   - `GET /api/games/:id` (el id es el código de sala) devuelve en JSON `id`, `status` (`lobby`, `playing` o `finished`), `bombSeconds`, `players` (por puesto), `eliminationOrder` y `winner`. Si no existe, 404 con `{ "error": "game_not_found" }`. El resultado se guarda aunque la sala se vacíe. El final de partida también se notifica por WebSocket (`game_over`).
   - `GET /api/lan` devuelve `{ addresses, port }` con las IP del portátil en la red local, sin adaptadores virtuales (VirtualBox, WSL, Hyper-V). Lo usa el cliente para que el enlace de invitación no diga `localhost`. **Ojo:** a 18-11-2026 el cliente ya lo llama pero la parte del servidor no existe (ver `DIARIO.md`, sesión 5).
@@ -169,12 +171,12 @@ Eventos de Socket.IO (no cambies nombres ni datos sin preguntar):
 | Dirección | Evento | Para qué |
 |---|---|---|
 | cliente → servidor | `create_room`, `join_room`, `leave_room` | entrar y salir de salas |
-| cliente → servidor | `start_game`, `back_to_lobby`, `set_theme` | iniciar o devolver a la sala; solo el máster cambia el mapa antes de empezar |
+| cliente → servidor | `start_game`, `back_to_lobby`, `set_theme`, `set_game_mode` | iniciar o devolver a la sala; solo el máster cambia mapa y modo antes de empezar |
 | cliente → servidor | `customize_player` | cada jugador actualiza su forma y color mientras está en la sala de espera |
 | cliente → servidor | `input` | teclas pulsadas (`up`, `down`, `left`, `right`) y `sprint: true` en el mensaje de la pulsación de Espacio |
 | servidor → cliente | `room_update` | estado de la sala de espera, mapa y skins de los jugadores |
-| servidor → cliente | `game_start`, `state`, `game_over` | partida: mapa inicial (con estanques y `sprintCooldown`), skins, posiciones, efectos (`fx`: `t`, `g`, `b`, `s` = esprint), segundos para el próximo esprint (`sw`) y bomba 20 veces por segundo, resultado |
-| servidor → cliente | `game_event` | sucesos sueltos; su campo `type` es `bomb` (bomba nueva), `pass`, `explosion`, `gadget`, `sprint` o `teleport` |
+| servidor → cliente | `game_start`, `state`, `game_over` | partida: mapa inicial (con estanques, monedas si corresponde y `sprintCooldown`), modo, posiciones, efectos (`fx`: `t`, `g`, `b`, `s` = esprint), segundos para el próximo esprint (`sw`), puntuación y bomba 20 veces por segundo; `game_over` añade clasificación, estadísticas y premios |
+| servidor → cliente | `game_event` | sucesos: `bomb` (incluye tipo), `pass`, `explosion` (efecto, radio, afectados), `gadget`, `sprint`, `teleport`, `coin` o `coin_spawn` |
 
 ## 6. Normas de trabajo
 

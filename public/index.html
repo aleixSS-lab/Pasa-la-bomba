@@ -27,6 +27,12 @@
           <label class="map-option ruins-option"><input type="radio" name="theme" value="ruins"><span data-i18n="map_ruins"></span></label>
         </fieldset>
 
+        <fieldset class="mode-picker">
+          <legend data-i18n="mode_title"></legend>
+          <label class="mode-option"><input type="radio" name="mode" value="bomb" checked><span class="mode-copy"><strong data-i18n="mode_bomb"></strong><small data-i18n="mode_bomb_desc"></small></span></label>
+          <label class="mode-option"><input type="radio" name="mode" value="coinRush"><span class="mode-copy"><strong data-i18n="mode_coin_rush"></strong><small data-i18n="mode_coin_rush_desc"></small></span></label>
+        </fieldset>
+
         <button type="button" id="btn-create" class="primary" data-i18n="create_room"></button>
 
         <p class="separator" data-i18n="or_join"></p>
@@ -43,6 +49,7 @@
       <ul class="how">
         <li data-i18n="how_1"></li>
         <li data-i18n="how_2"></li>
+        <li data-i18n="how_bomb_types"></li>
         <li>
           <span data-i18n="how_3"></span>
           <ul class="legend">
@@ -67,6 +74,12 @@
         <label class="map-option forest-option"><input type="radio" name="lobby-theme" value="forest"><span data-i18n="map_forest"></span></label>
         <label class="map-option desert-option"><input type="radio" name="lobby-theme" value="desert"><span data-i18n="map_desert"></span></label>
         <label class="map-option ruins-option"><input type="radio" name="lobby-theme" value="ruins"><span data-i18n="map_ruins"></span></label>
+      </fieldset>
+
+      <fieldset id="lobby-mode-picker" class="mode-picker">
+        <legend data-i18n="mode_lobby_title"></legend>
+        <label class="mode-option"><input type="radio" name="lobby-mode" value="bomb"><span class="mode-copy"><strong data-i18n="mode_bomb"></strong><small data-i18n="mode_bomb_desc"></small></span></label>
+        <label class="mode-option"><input type="radio" name="lobby-mode" value="coinRush"><span class="mode-copy"><strong data-i18n="mode_coin_rush"></strong><small data-i18n="mode_coin_rush_desc"></small></span></label>
       </fieldset>
 
       <fieldset class="skin-picker">
@@ -129,6 +142,10 @@
     <!-- Resultados -->
     <section id="screen-results" class="card" aria-labelledby="results-title" hidden>
       <h1 id="results-title" tabindex="-1"></h1>
+      <h2 data-i18n="results_stats_title"></h2>
+      <ul id="result-stats" class="players results-stats"></ul>
+      <h2 data-i18n="awards_title"></h2>
+      <ul id="result-awards" class="award-list"></ul>
       <h2 data-i18n="ranking"></h2>
       <ol id="ranking" class="players"></ol>
       <p><a id="api-link" target="_blank" rel="noopener" data-i18n="api_link"></a></p>

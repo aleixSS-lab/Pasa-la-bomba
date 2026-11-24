@@ -8,12 +8,12 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 22, 23-11-2026.*
+*Última actualización: sesión 23, 24-11-2026.*
 
 ## Estado actual
 
 - **Publicado:** https://pasa-la-bomba-0db0.onrender.com (Render, gratis). Se actualiza solo con cada fusión en `main`.
-- **Funciona:** salas con código, selector de mapa en creación y sala de espera, cinco estanques teletransportadores de varias formas y tamaños por mapa, skins con forma y color elegibles, bomba, gadgets, esprint y el resto de la partida. La rama `game-estanques-personalizacion` está subida; los cambios visuales de `view-sala-neon` están pendientes de subir.
+- **Funciona:** salas con código, selector de mapa y modo, cinco estanques teletransportadores de varias formas y tamaños por mapa, skins personalizables, Coin Rush, cuatro tipos de bomba, gadgets, esprint y resultados detallados. La rama `game-modos-bombas-estadisticas` aún no está subida.
 - **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
 - **Sin probar:** una partida real entre personas en PC distintos (ya basta con la web de Render). `start.bat` y el túnel quedan como plan B.
 - **Fase:** 4 de 5 (red real y ajuste jugando).
@@ -47,6 +47,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 20 | 23-11 | Integrar mapas temáticos con la rama de esprint | Rama visual puesta al día con `game-esprint`; conflictos resueltos conservando ambos cambios |
 | 21 | 23-11 | Estanques con teletransporte y skins personalizables | El máster cambia el mapa en la sala; cada jugador elige forma y color |
 | 22 | 23-11 | Interfaz cian angular para la sala | Paneles grafito, líneas técnicas cian y entradas oscuras |
+| 23 | 23–24-11 | Coin Rush, tipos de bomba, resultados y fusión | `npm test` y partida local de dos jugadores pasan; falta integrar dos cambios recientes de `main` |
 
 ## 1. Herramientas de IA
 
@@ -86,6 +87,10 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | «Cambia el de desierto, hay mucho espacio sin bloques (cactus)» | Más grupos de obstáculos y cactus en el desierto |
 | «Haz que al entrar en el estanque aparezcas en otra parte, pon más estanques de distintas formas y tamaños, deja elegir el mapa en la sala y personalizar forma y color del jugador» | Cinco estanques interactivos por mapa, cambio de mapa en la sala de espera y ocho formas con color a elección |
 | «Cambia los colores de las entradas y haz el fondo como las referencias»; luego «no me gusta rosa ni las formas ovaladas, probemos la segunda foto» | Interfaz de paneles grafito con bordes geométricos, líneas cian y controles oscuros |
+| «Añade Coin Rush, tipos de bomba y estadísticas al acabar cada partida» | Segundo modo, cuatro variantes de bomba y pantalla final con métricas y premios |
+| «En modo coin no funciona y los mapas son muy feos, no se parecen a la foto» | Se descubre que el servidor local era anterior al modo nuevo; se aclaran las monedas y se ensaya una estética nueva del bosque, luego revertida a petición de Adriana |
+| «No me gusta nada la estética del mapa; prefiero la anterior» | Se revierten los senderos y el aumento reciente de densidad y textura, conservando las mecánicas de juego |
+| «Está igual el mapa; cámbialo, hazlo mejor o devuélvelo al de antes» | La reversión anterior no había quitado el rediseño inicial; se restauran los dibujos y colores del mapa desde la rama base |
 
 ## 4. Qué tuvo que investigar el alumno
 
@@ -966,3 +971,43 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 - Los cambios se limitan a las pantallas fuera de la partida; el canvas y sus colores no cambian.
 
 **Siguiente paso:** preguntar si se sube `view-sala-neon` a GitHub.
+
+---
+
+## Sesión 23 — 2026-11-23 — Coin Rush, bombas y resultados
+
+**Autor:** Adriana.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+
+**Qué se pidió:** que cada mapa tuviera una estética propia siguiendo una referencia de bosque cenital; añadir Coin Rush como segundo modo; introducir bombas estándar, congeladas, explosivas y misteriosas; y mostrar estadísticas y premios al final. Después Adriana avisó que Coin Rush no funcionaba y que los mapas seguían sin parecerse a la referencia.
+
+**Qué se hizo:**
+
+- Rama `game-modos-bombas-estadisticas`, basada en `view-sala-neon` para conservar el diseño de la sala de espera.
+- Se añadió el selector del modo de juego al crear sala y a la sala de espera. Coin Rush reparte y repone monedas, suma la puntuación y decide el resultado tras 90 segundos.
+- La bomba se asigna con una variante aleatoria por ronda: la congelada ralentiza a jugadores cercanos, la explosiva tiene radio mayor y la misteriosa revela su efecto al detonar.
+- Resultados por jugador: supervivencia, aceleradores, teletransportes, trampas, eliminaciones, bombas pasadas/recibidas, distancia, monedas y victorias; premios por rapidez, aceleradores, supervivencia, teletransporte, trampas, bombas recibidas y mala suerte.
+- Se probó una versión del bosque con senderos, más relieve y mayor densidad; tras el comentario de Adriana se retiraron esos cambios y se restauró la estética anterior. Las monedas vuelven a su tamaño previo.
+- `README.md` y `CLAUDE.md` actualizados con modos, eventos, estadísticas y API.
+- Una simulación aislada del módulo confirmó 44 monedas iniciales, recogida y fin de Coin Rush a los 90 segundos. La comprobación multijugador se hizo después para preparar la fusión.
+- Para preparar la fusión, se actualizó la prueba de eventos de bomba y se añadieron comprobaciones de Coin Rush y bombas de área. `npm test` terminó con «Todo correcto».
+- La prueba local en dos pestañas creó y unió a dos jugadores, inició la partida, mostró la bomba congelada, una eliminación y la pantalla de estadísticas.
+- `git diff --check` no encontró errores de espacios.
+
+**Qué falló y cómo se arregló:**
+
+- La sala local abierta en `localhost:3000` mostraba el selector de mapas y skins, pero no el selector de modo. Eso confirmó que el proceso Node activo era de una versión anterior a esta rama. Para conservar esa sala, no se detuvo: se arrancó la versión actualizada en `localhost:3001`.
+- La primera ejecución de `npm test` esperaba un evento `pass` antiguo sin `bombType`; se ajustó la prueba al formato nuevo y se fijaron bombas estándar en la simulación de red para evitar aleatoriedad, manteniendo casos dirigidos para los efectos especiales.
+- La primera versión de las métricas usaba claves que no coincidían con las traducciones; se enlazaron explícitamente con las etiquetas existentes.
+- La primera composición del sendero se insertó en la función de obstáculos por error; se movió a la capa de terreno para dibujarlo una sola vez.
+- Adriana prefirió el mapa anterior a la propuesta de senderos; se restauraron los parámetros y dibujos de antes de esa prueba.
+- Al volver a señalar que el mapa seguía igual, se detectó que solo se habían revertido los retoques más recientes. Se restauraron también desde la rama base las paletas y funciones originales de dibujo del suelo y obstáculos, sin tocar las monedas ni los iconos de bombas.
+
+**Decisiones y por qué:**
+
+- Los valores del modo Coin Rush se dejan ajustables en `server/config.js` y se usa empate si varios jugadores terminan con el mismo máximo de monedas.
+- La interfaz de juego sigue usando el modo y el estado que envía el servidor; no se añadió una base de datos, así que las victorias solo cuentan dentro de la sala en memoria.
+
+**Qué investigar por el alumno:** servidor autoritativo, eventos Socket.IO, estadísticas acumuladas en memoria y diferencias entre `game_event` y `state`.
+
+**Siguiente paso:** integrar a esta rama los dos commits recientes de `origin/main`, resolver la numeración de las entradas del diario y completar las comprobaciones posteriores en GitHub y Render.

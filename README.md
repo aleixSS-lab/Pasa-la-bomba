@@ -13,13 +13,15 @@ Abre el enlace, crea una sala y pasa el enlace de invitación a los demás. Est�
 ## Cómo se juega
 
 1. Escribe un apodo y **crea una sala**, eligiendo uno de los tres mapas pixelados, o **únete** con un código de 4 letras (o con el enlace de invitación).
-2. En la sala de espera, el máster puede cambiar el mapa y cada jugador puede escoger una forma y un color para su skin. El máster inicia la partida cuando estén todos listos.
+2. En la sala de espera, el máster puede cambiar el mapa y el modo; cada jugador puede escoger una forma y un color para su skin. El máster inicia la partida cuando estén todos listos.
 3. Tras una cuenta atrás, un jugador al azar recibe la **bomba**. Su temporizador no se reinicia al pasarla.
 4. Quien la lleva corre un poco más. Para pasarla, **toca a otro jugador**. Quien la acaba de pasar es inmune un instante, y quien la recibe se queda parado un momento, para que no se la devuelvan sin parar.
 5. Los **estanques** del mapa te teletransportan a una zona lejana y despejada.
 6. Cuando la bomba explota, su portador queda **eliminado** y pasa a ser espectador. Poco después, otro jugador vivo recibe una bomba nueva.
 7. Pulsa **Espacio** para esprintar: vas mucho más rápido un momento y después tiene que recargarse.
-8. **Gana el último vivo.**
+8. **Gana el último vivo.** También puedes elegir **Coin Rush**: recoge monedas durante 90 segundos; gana quien consiga más.
+
+En el modo de bomba pueden aparecer cuatro variantes: estándar, congelada (ralentiza a quienes están cerca), explosiva (radio mayor) y misteriosa (su efecto se revela al explotar). Al final se muestra la clasificación, estadísticas de cada jugador y premios especiales.
 
 Gadgets repartidos por el mapa (al pisarlos se gastan y reaparecen en otro sitio):
 
@@ -77,14 +79,23 @@ GET /api/games/:codigo
 {
   "id": "KQPR",
   "status": "finished",
+  "mode": "bomb",
   "bombSeconds": 30,
+  "modeSeconds": 90,
   "players": [
     { "name": "Luis",  "place": 1, "eliminated": false },
     { "name": "Ana",   "place": 2, "eliminated": true },
     { "name": "Marta", "place": 3, "eliminated": true }
   ],
   "eliminationOrder": ["Marta", "Ana"],
-  "winner": "Luis"
+  "winner": "Luis",
+  "winners": ["Luis"],
+  "statistics": [
+    { "name": "Luis", "survivalTime": 42.5, "boosts": 2, "teleports": 1,
+      "traps": 0, "eliminations": 1, "bombsPassed": 2, "bombsReceived": 1,
+      "distance": 86, "coins": 0, "wins": 1 }
+  ],
+  "awards": [{ "key": "fastest", "player": "Luis" }]
 }
 ```
 
@@ -100,6 +111,8 @@ La partida en tiempo real va por **WebSockets** (Socket.IO). Los eventos están 
 - **Flujo de trabajo:** una rama por cambio; al subirla, GitHub Actions abre el pull request a `main` automáticamente, y el otro coautor lo revisa y lo fusiona.
 - **Sin login ni base de datos:** apodo y código de sala; todo vive en memoria.
 - **Mapas:** bosque con árboles y una laguna, desierto con cactus, rocas y un oasis, y ruinas con columnas rotas y una fuente antigua. Hay estanques de varias formas y tamaños que teletransportan a otra zona; el tablero reserva sus alrededores para que sigan accesibles.
+- **Modos:** Pasa la bomba y Coin Rush (recuento de monedas durante 90 segundos). La bomba puede ser estándar, congelada, explosiva o misteriosa.
+- **Resultados:** supervivencia, aceleradores, teletransportes, trampas, eliminaciones, bombas pasadas y recibidas, distancia, monedas y victorias de cada jugador; añade premios informales.
 - **Personalización:** en la sala de espera cada jugador elige entre círculo, cuadrado, triángulo, rombo, estrella, hexágono, cruz y pentágono, además de cualquier color. La forma y el color se comparten con toda la sala.
 
 ```

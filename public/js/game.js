@@ -23,6 +23,8 @@ const Game = (() => {
 
   let canvas, ctx, map, gadgets, players, myId, sendInput, minimapWalls;
   let holderId = null;
+  let bombType = 'standard';
+  let coins = new Map();
   let running = false;
   let lastTime = 0;
   let blasts = [];                  // explosiones que se están dibujando
@@ -36,8 +38,10 @@ const Game = (() => {
     myId = id;
     sendInput = onInput;
     holderId = null;
+    bombType = 'standard';
     blasts = [];
     gadgets = new Map(data.gadgets.map((g) => [g.id, g]));
+    coins = new Map((data.coins || []).map((coin) => [coin.id, coin]));
     players = new Map(data.players.map((p) => [p.id, { ...p, drawX: p.x, drawY: p.y }]));
     minimapWalls = buildMinimap();
     Object.keys(input).forEach((k) => { input[k] = false; });
@@ -61,6 +65,7 @@ const Game = (() => {
   // Nuevas posiciones y estado de la bomba enviados por el servidor.
   function onState(state) {
     holderId = state.bomb.holder;
+    bombType = state.bomb.type || 'standard';
     const present = new Set();
     for (const s of state.players) {
       present.add(s.id);
@@ -79,8 +84,12 @@ const Game = (() => {
       const p = players.get(event.by);
       if (p) Object.assign(p, { x: event.to.x, y: event.to.y, drawX: event.to.x, drawY: event.to.y });
     } else if (event.type === 'explosion') {
-      blasts.push({ x: event.x, y: event.y, start: performance.now() });
+      blasts.push({ x: event.x, y: event.y, radius: event.radius || 90, effectType: event.effectType, start: performance.now() });
       if (event.id === myId) Object.assign(spectator, { x: event.x, y: event.y });
+    } else if (event.type === 'coin') {
+      coins.delete(event.id);
+    } else if (event.type === 'coin_spawn') {
+      coins.set(event.coin.id, event.coin);
     }
   }
 
@@ -179,6 +188,8 @@ const Game = (() => {
     drawLandmark(ctx, map.theme, map.landmark);
     drawPonds(ctx, map.ponds || [], map.theme);
 
+    for (const coin of coins.values()) drawCoin(ctx, coin.x, coin.y, map.tile * 0.22);
+
     // Gadgets: cada uno dibujado como lo que es, sobre una sombra para que destaque del suelo.
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -221,7 +232,7 @@ const Game = (() => {
       ctx.lineWidth = p.id === myId ? 2.5 : 1.5;
       ctx.strokeStyle = '#f1f3f5';
       ctx.stroke();
-      if (hasBomb) drawIcon(ctx, 'bomb', p.drawX + map.radius + 16, p.drawY + 2, 12);
+      if (hasBomb) drawIcon(ctx, 'bomb', p.drawX + map.radius + 16, p.drawY + 2, 12, bombType);
 
       // Apodo encima y efectos activos debajo, con el mismo dibujo que el gadget.
       ctx.font = 'bold 14px system-ui, sans-serif';
@@ -234,10 +245,10 @@ const Game = (() => {
     blasts = blasts.filter((b) => now - b.start < 600);
     for (const b of blasts) {
       const progress = (now - b.start) / 600;
-      ctx.strokeStyle = '#ffd43b';
+      ctx.strokeStyle = b.effectType === 'frozen' ? '#64e7ff' : (b.effectType === 'explosive' ? '#ff713c' : '#ffd43b');
       ctx.lineWidth = 8 * (1 - progress) + 1;
       ctx.beginPath();
-      ctx.arc(b.x, b.y, 20 + progress * 90, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, Math.max(20, b.radius) * progress, 0, Math.PI * 2);
       ctx.stroke();
     }
     ctx.restore();
@@ -248,6 +259,22 @@ const Game = (() => {
   function noise(x, y, salt = 0) {
     const n = Math.sin(x * 127.1 + y * 311.7 + salt * 74.7) * 43758.5453;
     return n - Math.floor(n);
+  }
+
+  function drawCoin(c, x, y, r) {
+    c.save();
+    c.fillStyle = 'rgba(18, 25, 24, 0.42)';
+    c.beginPath(); c.ellipse(x + 2, y + 4, r * 1.05, r * 0.58, 0, 0, Math.PI * 2); c.fill();
+    const gold = c.createRadialGradient(x - r * 0.35, y - r * 0.45, 1, x, y, r * 1.25);
+    gold.addColorStop(0, '#fff6b0');
+    gold.addColorStop(0.45, '#f9d34f');
+    gold.addColorStop(1, '#b87927');
+    c.fillStyle = gold;
+    c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#fff0a0'; c.lineWidth = 2; c.stroke();
+    c.strokeStyle = 'rgba(128, 82, 24, 0.8)'; c.lineWidth = Math.max(1, r * 0.14);
+    c.beginPath(); c.ellipse(x, y, r * 0.43, r * 0.68, 0, 0, Math.PI * 2); c.stroke();
+    c.restore();
   }
 
   function drawFloor(c, theme, camX, camY, w, h, mapW, mapH, tile) {
@@ -577,7 +604,7 @@ const Game = (() => {
   }
 
   // Bomba clásica: esfera negra con borde claro, boquilla, mecha y chispa.
-  function drawBombIcon(c, x, y, s) {
+  function drawBombIcon(c, x, y, s, variant = 'standard') {
     const bx = x - s * 0.1;
     const by = y + s * 0.15;
     c.save();                                     // boquilla, inclinada hacia arriba a la derecha
@@ -592,7 +619,8 @@ const Game = (() => {
     c.stroke();
     c.restore();
     circle(c, bx, by, s * 0.75);                  // cuerpo
-    c.fillStyle = '#212529';
+    c.fillStyle = variant === 'frozen' ? '#1c8cae'
+      : (variant === 'explosive' ? '#a63c22' : (variant === 'mystery' ? '#624091' : '#212529'));
     c.fill();
     c.strokeStyle = '#f1f3f5';
     c.lineWidth = s * 0.12;
@@ -627,23 +655,24 @@ const Game = (() => {
 
   const ICONS = { trap: drawTrap, gum: drawGum, boost: drawBoost, bomb: drawBombIcon };
 
-  function drawIcon(c, type, x, y, s) {
+  function drawIcon(c, type, x, y, s, variant) {
     c.save();
-    ICONS[type](c, x, y, s);
+    ICONS[type](c, x, y, s, variant);
     c.restore();
   }
 
   // El mismo dibujo como imagen, para usarlo en la leyenda y en las instrucciones.
   const iconCache = {};
-  function iconURL(type) {
-    if (!iconCache[type]) {
+  function iconURL(type, variant = 'standard') {
+    const key = `${type}:${variant}`;
+    if (!iconCache[key]) {
       const off = document.createElement('canvas');
       off.width = 64;
       off.height = 64;
-      drawIcon(off.getContext('2d'), type, 32, type === 'bomb' ? 36 : 32, type === 'trap' ? 22 : 24);
-      iconCache[type] = off.toDataURL();
+      drawIcon(off.getContext('2d'), type, 32, type === 'bomb' ? 36 : 32, type === 'trap' ? 22 : 24, variant);
+      iconCache[key] = off.toDataURL();
     }
-    return iconCache[type];
+    return iconCache[key];
   }
 
   // Forma de cada jugador según su índice.
