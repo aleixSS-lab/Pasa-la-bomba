@@ -8,12 +8,13 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 23, 24-11-2026.*
+*Última actualización: sesión 24, 24-11-2026.*
 
 ## Estado actual
 
 - **Publicado:** https://pasa-la-bomba-0db0.onrender.com (Render, gratis). Se actualiza solo con cada fusión en `main`.
-- **Funciona:** salas con código, selector de mapa y modo, cinco estanques teletransportadores de varias formas y tamaños por mapa, skins personalizables, Coin Rush, cuatro tipos de bomba, gadgets, esprint y resultados detallados. La rama `game-modos-bombas-estadisticas` aún no está subida.
+- **Funciona:** salas con código, selector de mapa y modo, cinco estanques teletransportadores de varias formas y tamaños por mapa, skins personalizables, Coin Rush, cuatro tipos de bomba, gadgets, esprint y resultados detallados. La rama `game-modos-bombas-estadisticas` integra ahora los cambios recientes de `main`.
+- **Pendiente conocido:** al terminar una partida y volver a la sala de espera, puede no aparecer el selector de mapas (fallo observado en la sesión 21 de Aleix).
 - **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
 - **Sin probar:** una partida real entre personas en PC distintos (ya basta con la web de Render). `start.bat` y el túnel quedan como plan B.
 - **Fase:** 4 de 5 (red real y ajuste jugando).
@@ -45,9 +46,10 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 18 | 18-11 | Laguna, oasis y fuente central | Un punto de interés decorativo en cada tema |
 | 19 | 18-11 | Más cactus en el desierto | Más grupos de obstáculos y mayor presencia de cactus |
 | 20 | 23-11 | Integrar mapas temáticos con la rama de esprint | Rama visual puesta al día con `game-esprint`; conflictos resueltos conservando ambos cambios |
-| 21 | 23-11 | Estanques con teletransporte y skins personalizables | El máster cambia el mapa en la sala; cada jugador elige forma y color |
-| 22 | 23-11 | Interfaz cian angular para la sala | Paneles grafito, líneas técnicas cian y entradas oscuras |
-| 23 | 23–24-11 | Coin Rush, tipos de bomba, resultados y fusión | `npm test` y partida local de dos jugadores pasan; falta integrar dos cambios recientes de `main` |
+| 21 | 23-11 | Integración de ramas y comprobación de mapas (Aleix) | `main` avanzó con mapas; selector ausente al volver a la sala anotado para Adriana |
+| 22 | 23-11 | Estanques con teletransporte y skins personalizables | El máster cambia el mapa en la sala; cada jugador elige forma y color |
+| 23 | 23-11 | Interfaz cian angular para la sala | Paneles grafito, líneas técnicas cian y entradas oscuras |
+| 24 | 23–24-11 | Coin Rush, tipos de bomba, resultados e integración | `npm test` y partida local de dos jugadores pasan; sesiones de ambos autores preservadas |
 
 ## 1. Herramientas de IA
 
@@ -918,7 +920,39 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 
 ---
 
-## Sesión 21 — 2026-11-23 — Estanques con teletransporte y skins personalizables
+## Sesión 21 — 2026-11-23 — Integración de ramas y comprobación de mapas
+
+**Autor:** Aleix.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+
+**Qué se pidió:** «Haz que todas las ramas se suban a main y que todas estén como en ahead y behind 0»; después, «hay 3 ramas que están con commits en ahead, arréglalos».
+
+**Qué se hizo:**
+
+- Se integró `game-esprint` en `main` por avance directo; entraron `docs-equipo-adriana`, `net-ramas-al-dia` y el esprint.
+- Al actualizar GitHub apareció `view-mapas-tematicos`, rama posterior que ya incluía esa cadena y añadía mapas temáticos. Aleix confirmó en el navegador con dos pestañas que se puede elegir el mapa y que aparece en partida.
+- Se integró `view-mapas-tematicos` por avance directo. Se avanzaron las demás ramas locales y remotas hasta el mismo commit de `main`; los commits anteriores siguen en el historial.
+- `npm test` pasó en `game-esprint` y `view-mapas-tematicos`. Render respondió con la versión del esprint y se pudo crear y cerrar una sala de comprobación por Socket.IO.
+- Se anotó para Adriana un fallo observado por Aleix: al terminar una partida y volver a la sala de espera, no aparece el selector de mapas.
+
+**Decisiones y por qué:**
+
+- Se eligió la rama más avanzada (`view-mapas-tematicos`) porque contiene la cadena anterior y sus cambios de mapas. Así se integró todo con un solo avance directo.
+- Se avanzaron las referencias de las ramas a petición de Aleix para que sus indicadores de ahead y behind quedaran a cero; las ramas ya no conservan una punta separada, aunque sus commits siguen dentro del historial.
+- El selector que falta al volver a la sala se dejó como tarea visual independiente para Adriana, sin tocar el código en esta integración.
+
+**Qué falló y cómo se arregló:**
+
+- El navegador integrado no pudo acceder al servidor local. Aleix hizo la comprobación visual en su navegador y confirmó que el selector y los mapas funcionan durante la partida.
+- Dos ejecuciones de `npm test` se quedaron esperando en la parte de red dentro del entorno restringido. Al permitir las conexiones locales del test, `npm test` terminó con «Todo correcto».
+
+**Pendiente de investigar por el alumno:** qué hace que el selector no vuelva a aparecer al regresar a la sala de espera.
+
+**Siguiente paso:** Adriana arregla el selector en una rama `view-` propia; después se prueba y se integra según `FUSION.md`.
+
+---
+
+## Sesión 22 — 2026-11-23 — Estanques con teletransporte y skins personalizables
 
 **Autor:** Adriana.
 **Herramienta:** Codex (OpenAI), agente GPT-6.
@@ -949,7 +983,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 
 ---
 
-## Sesión 22 — 2026-11-23 — Interfaz cian angular para la sala
+## Sesión 23 — 2026-11-23 — Interfaz cian angular para la sala
 
 **Autor:** Adriana.
 **Herramienta:** Codex (OpenAI), agente GPT-6.
@@ -974,7 +1008,7 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 
 ---
 
-## Sesión 23 — 2026-11-23 — Coin Rush, bombas y resultados
+## Sesión 24 — 2026-11-24 — Coin Rush, bombas, resultados e integración en main
 
 **Autor:** Adriana.
 **Herramienta:** Codex (OpenAI), agente GPT-6.
@@ -1010,4 +1044,6 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 
 **Qué investigar por el alumno:** servidor autoritativo, eventos Socket.IO, estadísticas acumuladas en memoria y diferencias entre `game_event` y `state`.
 
-**Siguiente paso:** integrar a esta rama los dos commits recientes de `origin/main`, resolver la numeración de las entradas del diario y completar las comprobaciones posteriores en GitHub y Render.
+**Qué se corrigió durante la integración:** se conservó completa la sesión 21 de Aleix y se renumeraron las sesiones de Adriana como 22–24. El único conflicto estaba en este diario; el código no tuvo conflictos. La prueba de Coin Rush se hizo determinista para evitar empates por monedas generadas al azar.
+
+**Siguiente paso:** verificar el avance de `main` en GitHub, revisar la publicación de Render y pedir a Aleix que actualice su copia con `git pull`.
