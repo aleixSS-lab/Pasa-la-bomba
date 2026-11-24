@@ -8,12 +8,12 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 
 # Resumen para la presentación
 
-*Última actualización: sesión 24, 24-11-2026.*
+*Última actualización: sesión 25, 24-11-2026.*
 
 ## Estado actual
 
 - **Publicado:** https://pasa-la-bomba-0db0.onrender.com (Render, gratis). Se actualiza solo con cada fusión en `main`.
-- **Funciona:** salas con código, selector de mapa y modo, cinco estanques teletransportadores de varias formas y tamaños por mapa, skins personalizables, Coin Rush, cuatro tipos de bomba, gadgets, esprint y resultados detallados. La rama `game-modos-bombas-estadisticas` integra ahora los cambios recientes de `main`.
+- **Funciona:** salas con código, selector de mapa y modo, cinco estanques teletransportadores de varias formas y tamaños por mapa, skins personalizables, Coin Rush, cuatro tipos de bomba, gadgets, esprint y resultados detallados. Todo el trabajo de `game-modos-bombas-estadisticas` está integrado en `main` (`ae024f8`); Render ya sirve esa versión.
 - **Pendiente conocido:** al terminar una partida y volver a la sala de espera, puede no aparecer el selector de mapas (fallo observado en la sesión 21 de Aleix).
 - **No funciona todavía:** el enlace de invitación sigue diciendo `localhost` si el máster entra así (el arreglo de la sesión 3 no llegó a guardarse; ver sesión 5).
 - **Sin probar:** una partida real entre personas en PC distintos (ya basta con la web de Render). `start.bat` y el túnel quedan como plan B.
@@ -50,6 +50,7 @@ Registro de cómo se ha construido el juego con agentes de IA. Tiene dos partes:
 | 22 | 23-11 | Estanques con teletransporte y skins personalizables | El máster cambia el mapa en la sala; cada jugador elige forma y color |
 | 23 | 23-11 | Interfaz cian angular para la sala | Paneles grafito, líneas técnicas cian y entradas oscuras |
 | 24 | 23–24-11 | Coin Rush, tipos de bomba, resultados e integración | `npm test` y partida local de dos jugadores pasan; sesiones de ambos autores preservadas |
+| 25 | 24-11 | Verificación de GitHub y Render | `main` en `ae024f8`; sala publicada comprobada con modos, mapas y skins |
 
 ## 1. Herramientas de IA
 
@@ -1047,3 +1048,32 @@ La IA eligió y explicó las tecnologías, pero el alumno tiene que poder defend
 **Qué se corrigió durante la integración:** se conservó completa la sesión 21 de Aleix y se renumeraron las sesiones de Adriana como 22–24. El único conflicto estaba en este diario; el código no tuvo conflictos. La prueba de Coin Rush se hizo determinista para evitar empates por monedas generadas al azar.
 
 **Siguiente paso:** verificar el avance de `main` en GitHub, revisar la publicación de Render y pedir a Aleix que actualice su copia con `git pull`.
+
+---
+
+## Sesión 25 — 2026-11-24 — Verificación tras integrar en main
+
+**Autor:** Adriana.
+**Herramienta:** Codex (OpenAI), agente GPT-6.
+
+**Qué se pidió:** «arreglalo, subelo ya», en referencia a integrar todos los cambios en `main` y resolver la numeración duplicada del diario.
+
+**Qué se hizo:**
+
+- `git ls-remote` confirmó que `main` apunta a `ae024f8`; la rama de trabajo quedó subida y sincronizada.
+- `npm test` terminó con «Todo correcto» después de integrar los dos commits nuevos de `main`.
+- Se abrió la versión publicada en Render, se creó una sala y se comprobó el selector de mapas y modos, las opciones de bomba y la personalización de forma y color. Luego se salió para cerrar la sala temporal.
+- Se mantuvo la sesión 21 de Aleix; las sesiones de Adriana quedaron numeradas como 22–24.
+- GitHub creó el PR #17 al subir la rama. La punta de `main` ya contiene el commit de ese PR, aunque GitHub todavía lo muestra abierto.
+
+**Decisiones y por qué:**
+
+- Se avanzó `main` directamente al commit de la rama según `FUSION.md`; la rama incluye todo el historial y los dos commits que Aleix añadió a `main`.
+
+**Qué falló y cómo se arregló:**
+
+- El único conflicto fue `DIARIO.md`; se preservaron ambas entradas y se renumeraron las de Adriana. La primera prueba de Coin Rush podía empatar por la colocación aleatoria; se aisló una moneda para hacerla determinista.
+
+**Pendiente de investigar por el alumno:** por qué a veces no aparece el selector de mapas al volver a la sala de espera, fallo anotado por Aleix en su sesión 21.
+
+**Siguiente paso:** avisar a Aleix de que haga `git pull` antes de continuar.
